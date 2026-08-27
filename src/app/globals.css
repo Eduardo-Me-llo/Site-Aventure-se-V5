@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@theme {
+  --color-adventure-dark: #0a0f1a;
+  --color-adventure-darker: #05080d;
+  --color-adventure-card: #111827;
+  --color-adventure-dark: #f7f3e9;
+  --color-adventure-darker: #f7f3e9;
+  --color-adventure-card: #f7f3e9;
+  --color-emerald-400: #0F83F7;
+  --color-emerald-500: #0F83F7;
+  --color-emerald-600: #0F83F7;
+  --color-teal-400: #0F83F7;
+  --color-teal-500: #0F83F7;
+  --color-amber-400: #F7C50F;
+  --color-amber-500: #F7C50F;
+
+  --animate-fade-in: fadeIn 0.5s ease-out forwards;
+  --animate-slide-up: slideUp 0.6s ease-out forwards;
+  --animate-pulse-glow: pulseGlow 2s infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-float: float 3s ease-in-out infinite;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 15px rgba(15, 131, 247, 0.25); }
+    50% { box-shadow: 0 0 30px rgba(15, 131, 247, 0.5); }
+  }
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+html, body {
+  @apply bg-adventure-dark text-slate-900 antialiased scroll-smooth;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-adventure-darker;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-adventure-card rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0F83F7;
+}
+
+/* Utilities */
+@utility glass {
+  @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)];
+}
+
+@utility glass-card {
+  @apply bg-adventure-card/80 backdrop-blur-lg border border-white/5 shadow-xl rounded-2xl;
+}
+
+@utility gradient-text {
+  background: linear-gradient(90deg, #0F83F7 0%, #F7C50F 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Theme overrides: force light background and dark text to complete rebrand */
+/* These override common dark utility classes used across files so we don't need to edit every file */
+.bg-neutral-950,
+.bg-zinc-950,
+.bg-neutral-900,
+.bg-zinc-900,
+.bg-neutral-900\/50,
+.bg-zinc-900\/50,
+.bg-neutral-950\/50,
+.bg-zinc-950\/50 {
+  background-color: var(--color-adventure-dark) !important;
+}
+
+.bg-white {
+  background-color: #ffffff !important;
+}
+
+.text-white,
+.text-neutral-100,
+.text-zinc-50,
+.text-zinc-100 {
+  color: #0f172a !important; /* use dark slate for body text */
+}
+
+.border-neutral-800,
+.border-zinc-800,
+.border-neutral-900 {
+  border-color: rgba(15,23,42,0.08) !important;
+}
+
+/* Buttons/accents that used dark backgrounds: invert to blue variants where appropriate */
+.bg-emerald-600, .bg-teal-600, .bg-emerald-600:hover, .bg-teal-600:hover {
+  background-color: #0F83F7 !important;
+}
+
+.shadow-emerald-900\/20, .shadow-teal-900\/20 {
+  box-shadow: 0 10px 25px rgba(15,131,247,0.08) !important;
+}
+
+/* Ensure scrollbar uses light track */
+::-webkit-scrollbar-track {
+  background: var(--color-adventure-dark) !important;
+}
