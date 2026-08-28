@@ -5,27 +5,33 @@ import Link from 'next/link';
 import { Trip } from '@/types';
 import { formatCurrency, getRemainingSpots, getScarcityBadge, getAccommodationIcon } from '@/lib/utils';
 import { Shield, CreditCard, Zap } from 'lucide-react';
+import { getPackagePrice, TRANSPORT_PRICE } from '@/lib/pricing';
 
 interface BookingWidgetProps {
   trip: Trip;
+  initialAccommodationId?: string | null;
 }
 
-export function BookingWidget({ trip }: BookingWidgetProps) {
-  const [selectedAccId, setSelectedAccId] = useState<string>('');
+export function BookingWidget({ trip, initialAccommodationId }: BookingWidgetProps) {
+  const [selectedAccId, setSelectedAccId] = useState<string>(initialAccommodationId || '');
   const [selectedTrpId, setSelectedTrpId] = useState<string>('transport'); // 'transport' or 'none'
 
   useEffect(() => {
+    if (initialAccommodationId && trip.accommodations?.some(accommodation => accommodation.id === initialAccommodationId)) {
+      setSelectedAccId(initialAccommodationId);
+      return;
+    }
     if (trip.accommodations && trip.accommodations.length > 0) {
       const firstAvail = trip.accommodations.find(a => (a.capacity - a.booked_count) > 0);
       if (firstAvail) setSelectedAccId(firstAvail.id);
     }
-  }, [trip]);
+  }, [trip, initialAccommodationId]);
 
   const selectedAcc = trip.accommodations?.find(a => a.id === selectedAccId);
   const accPrice = selectedAcc ? selectedAcc.price : 0;
-  const firstTransport = trip.transport_options?.[0];
-  const trpPrice = selectedTrpId === 'transport' ? (firstTransport?.price || 0) : 0;
-  const totalPrice = accPrice + trpPrice;
+  const firstTransport = trip.transport_options?.find(transport => transport.has_transport);
+  const trpPrice = selectedTrpId === 'transport' ? TRANSPORT_PRICE : 0;
+  const totalPrice = getPackagePrice(selectedAcc, selectedTrpId === 'transport', 'credit_card');
   const installmentPrice = totalPrice / 12;
 
   const isSoldOut = !trip.accommodations || trip.accommodations.every(a => (a.capacity - a.booked_count) <= 0);
@@ -139,7 +145,7 @@ export function BookingWidget({ trip }: BookingWidgetProps) {
 
       {/* CTA */}
       <Link 
-        href={!selectedAccId || isSoldOut ? '#' : `/checkout/${trip.id}?acc=${selectedAccId}&trp=${selectedTrpId}`}
+        href={!selectedAccId || isSoldOut ? '#' : `/checkout/${trip.id}?acc=${selectedAccId}&trp=${selectedTrpId === 'transport' ? firstTransport?.id || 'trp-with' : 'trp-without'}`}
         className={`w-full py-4 px-6 rounded-xl font-bold text-center transition-all duration-300 flex items-center justify-center gap-2 ${
           !selectedAccId || isSoldOut 
             ? 'bg-adventure-card/40 text-slate-400 cursor-not-allowed' 

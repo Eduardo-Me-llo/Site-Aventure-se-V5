@@ -66,6 +66,7 @@ export interface TripAccommodation {
   label: string;
   description: string;
   amenities: string[];
+  image_url?: string;
   price: number;
   capacity: number;
   booked_count: number;

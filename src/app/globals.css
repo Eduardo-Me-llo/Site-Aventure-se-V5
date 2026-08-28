@@ -51,6 +51,11 @@ html, body {
   @apply bg-adventure-dark text-slate-900 antialiased scroll-smooth;
 }
 
+h1 {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: 0;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

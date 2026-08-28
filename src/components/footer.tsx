@@ -76,8 +76,8 @@ export function Footer() {
               <a href="mailto:contato@aventure-se.com.br" className="flex items-center gap-2 hover:text-blue-400 transition-colors">
                 <Mail className="h-4 w-4" /> contato@aventure-se.com.br
               </a>
-              <a href="tel:+5511999999999" className="flex items-center gap-2 hover:text-blue-400 transition-colors">
-                <Phone className="h-4 w-4" /> (11) 99999-9999
+              <a href="tel:+5521977167373" className="flex items-center gap-2 hover:text-blue-400 transition-colors">
+                <Phone className="h-4 w-4" /> (21) 97716-7373
               </a>
             </div>
           </div>

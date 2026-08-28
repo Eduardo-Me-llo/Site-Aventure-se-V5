@@ -25,13 +25,13 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? 'glass py-4' : 'bg-transparent py-6'
+        isScrolled ? 'glass py-2.5 sm:py-4' : 'bg-transparent py-3 sm:py-6'
       }`}
     >
-      <div className="container mx-auto px-6 md:px-12 flex justify-between items-center">
+      <div className="container mx-auto px-3 sm:px-6 md:px-12 flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center group" aria-label="Aventure-se">
-          <BrandLogo className="h-14 w-36 transition-transform group-hover:scale-105" priority />
+          <BrandLogo className="h-10 w-28 sm:h-14 sm:w-36 transition-transform group-hover:scale-105" priority />
         </Link>
 
         {/* Desktop Nav */}
@@ -66,7 +66,7 @@ export default function Navbar() {
 
         {/* Mobile Menu Toggle */}
         <button
-          className="md:hidden text-slate-900 hover:text-blue-500 transition-colors"
+          className="md:hidden flex h-9 w-9 items-center justify-center text-slate-900 hover:text-blue-500 transition-colors"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label="Toggle menu"
         >

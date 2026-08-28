@@ -6,6 +6,7 @@
 import { Trip, TripAccommodation, TripTransportOption, Coupon, Booking, BookingFormData } from '@/types';
 import { MOCK_TRIPS, MOCK_COUPONS, MOCK_BOOKINGS } from '@/lib/mock-data';
 import { generateBookingCode, getRemainingSpots } from '@/lib/utils';
+import { getPackagePrice, PIX_DISCOUNT, TRANSPORT_PRICE } from '@/lib/pricing';
 
 const STORAGE_KEYS = {
   TRIPS: 'aventurese_trips',
@@ -47,7 +48,13 @@ function setToStorage<T>(key: string, data: T): void {
 
 function initializeStore(): void {
   if (typeof window === 'undefined') return;
-  if (!localStorage.getItem(STORAGE_KEYS.TRIPS)) {
+  const storedTrips = getFromStorage<Trip[] | null>(STORAGE_KEYS.TRIPS, null);
+  const currentPricingIsLoaded = storedTrips?.some(trip =>
+    trip.id === 'trip-reveillon-2026' &&
+    trip.accommodations?.length === 11 &&
+    trip.accommodations.some(accommodation => accommodation.id === 'acc-suite-master-casal' && accommodation.price === 3197)
+  );
+  if (!currentPricingIsLoaded) {
     setToStorage(STORAGE_KEYS.TRIPS, MOCK_TRIPS);
   }
   if (!localStorage.getItem(STORAGE_KEYS.COUPONS)) {
@@ -199,9 +206,11 @@ export function createBooking(
   formData: BookingFormData
 ): Booking {
   const accommodationPrice = accommodation.price;
-  const transportPrice = transport.has_transport ? transport.price : 0;
-  const subtotal = accommodationPrice + transportPrice;
-  const discountAmount = coupon ? calculateDiscount(coupon, subtotal) : 0;
+  const transportPrice = transport.has_transport ? TRANSPORT_PRICE : 0;
+  const subtotal = getPackagePrice(accommodation, transport.has_transport, 'credit_card');
+  const couponDiscount = coupon ? calculateDiscount(coupon, subtotal) : 0;
+  const pixDiscount = formData.payment_method === 'pix' ? PIX_DISCOUNT : 0;
+  const discountAmount = couponDiscount + pixDiscount;
   const total = subtotal - discountAmount;
 
   const booking: Booking = {

@@ -5,10 +5,12 @@ import Link from 'next/link'
 import { 
   ArrowRight, Mountain, MapPin, Calendar, CreditCard, 
   Shield, Users, Sparkles, Star, ChevronDown, Compass, 
-  PartyPopper, Heart, CheckCircle, Quote, Tent, Bus,
+  PartyPopper, CheckCircle, Quote, Tent, Bus,
   Timer
 } from 'lucide-react'
 import { TripCard } from '@/components/trip-card'
+import { FeaturedTripCarousel } from '@/components/featured-trip-carousel'
+import { BrandLogo } from '@/components/brand-logo'
 import { getFeaturedTrips, getHomeImage } from '@/lib/store'
 import { Trip } from '@/types'
 
@@ -18,9 +20,14 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setTrips(getFeaturedTrips())
-    setHomeImage(getHomeImage())
-    setMounted(true)
+    try {
+      setTrips(getFeaturedTrips())
+      setHomeImage(getHomeImage())
+    } catch (error) {
+      console.error('Não foi possível carregar os dados da home:', error)
+    } finally {
+      setMounted(true)
+    }
   }, [])
 
   if (!mounted) return null
@@ -43,10 +50,7 @@ export default function HomePage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-indigo-900/20 rounded-full blur-[150px]"></div>
 
         <div className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto mt-10 lg:mt-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-8 animate-fade-in-up">
-            <Sparkles className="w-4 h-4" />
-            <span>Descubra um novo jeito de viajar</span>
-          </div>
+          <BrandLogo className="h-16 w-32 sm:h-20 sm:w-40 mb-6 sm:mb-8 animate-fade-in-up" priority />
           
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-slate-900 mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             Sua próxima <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-400">aventura</span> começa aqui
@@ -61,7 +65,7 @@ export default function HomePage() {
               onClick={scrollToTrips}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 text-white font-bold text-lg transition-all duration-300 shadow-[0_0_30px_-5px_rgba(15,131,247,0.25)] hover:shadow-[0_0_40px_-5px_rgba(15,131,247,0.4)] hover:-translate-y-1"
             >
-              Explorar Destinos
+              Próximo Destino
               <ArrowRight className="w-5 h-5" />
             </button>
             <Link 
@@ -74,33 +78,24 @@ export default function HomePage() {
         </div>
 
         {/* Stats Bar */}
-        <div className="relative z-10 w-full max-w-5xl mx-auto mt-24 mb-16 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8 px-6 rounded-3xl bg-adventure-card/40 border border-neutral-300/50 backdrop-blur-md">
+        <div className="relative z-10 w-full max-w-5xl mx-auto mt-16 sm:mt-24 mb-10 sm:mb-16 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 py-5 sm:py-8 px-3 sm:px-6 rounded-3xl bg-adventure-card/40 border border-neutral-300/50 backdrop-blur-md">
             <div className="flex items-center justify-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center">
                 <Users className="w-6 h-6 text-blue-400" />
               </div>
               <div className="text-left">
-                <p className="text-2xl font-bold text-slate-900">500+</p>
-                <p className="text-sm text-slate-700">Aventureiros</p>
+                <p className="text-xl sm:text-2xl font-bold text-slate-900">2000+</p>
+                <p className="text-xs sm:text-sm text-slate-700">Aventureiros</p>
               </div>
             </div>
-            <div className="flex items-center justify-center gap-4 border-t md:border-t-0 md:border-l border-neutral-800/50 pt-6 md:pt-0">
-              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+            <div className="flex items-center justify-center gap-4 border-l border-neutral-800/50 md:border-t-0 md:border-l border-neutral-300/50 pl-3 sm:pl-0">
+              <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center">
                 <MapPin className="w-6 h-6 text-blue-400" />
               </div>
               <div className="text-left">
-                <p className="text-2xl font-bold text-slate-900">15+</p>
-                <p className="text-sm text-slate-700">Destinos</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-center gap-4 border-t md:border-t-0 md:border-l border-neutral-300/50 pt-6 md:pt-0">
-              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <Heart className="w-6 h-6 text-blue-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-2xl font-bold text-slate-900">98%</p>
-                <p className="text-sm text-slate-700">Satisfação</p>
+                <p className="text-xl sm:text-2xl font-bold text-slate-900">15+</p>
+                <p className="text-xs sm:text-sm text-slate-700">Destinos</p>
               </div>
             </div>
           </div>
@@ -116,21 +111,22 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="relative rounded-3xl overflow-hidden p-1 bg-gradient-to-r from-blue-500 via-blue-400 to-indigo-600 shadow-2xl">
             {/* Inner Content */}
-            <div className="relative bg-adventure-card/95 backdrop-blur-xl rounded-[1.4rem] p-8 md:p-12 overflow-hidden flex flex-col lg:flex-row gap-10 lg:items-center">
+            <div className="relative bg-adventure-card/95 backdrop-blur-xl rounded-[1.4rem] p-4 sm:p-6 md:p-12 overflow-hidden flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-10 lg:items-center">
               {/* Background abstract shape */}
               <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
               
               <div className="flex-1 z-10">
+                <FeaturedTripCarousel />
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-bold tracking-wider mb-6">
                   <PartyPopper className="w-4 h-4" />
                   <span>EDIÇÃO ESPECIAL</span>
                 </div>
                 
-                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-4">
                   Réveillon Aventure-se 2026/2027
                 </h2>
                 
-                <div className="flex flex-wrap items-center gap-4 text-slate-700 mb-8 font-medium">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm sm:text-base text-slate-700 mb-6 sm:mb-8 font-medium">
                   <span className="flex items-center gap-1.5"><MapPin className="w-5 h-5 text-blue-400" /> Ubatumirim, Ubatuba</span>
                   <span className="hidden md:inline text-slate-700">•</span>
                   <span className="flex items-center gap-1.5"><Calendar className="w-5 h-5 text-blue-400" /> 29 de dezembro a 03 de janeiro</span>
@@ -138,14 +134,14 @@ export default function HomePage() {
                 
                 <div className="flex flex-wrap gap-3 mb-8">
                   {['5 dias pé na areia', '4 festas temáticas', 'Yoga & Breathwork', 'Ritual da Virada'].map((highlight, i) => (
-                    <span key={i} className="px-4 py-2 rounded-lg bg-adventure-card/80 border border-neutral-300 text-sm text-slate-700 flex items-center gap-2">
+                    <span key={i} className="px-3 py-2 rounded-lg bg-adventure-card/80 border border-neutral-300 text-xs sm:text-sm text-slate-700 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-blue-500" />
                       {highlight}
                     </span>
                   ))}
                 </div>
                 
-                <div className="relative pl-6 border-l-4 border-blue-500/50 py-2 mb-10">
+                <div className="relative pl-4 sm:pl-6 border-l-4 border-blue-500/50 py-2 mb-6 sm:mb-10">
                   <Quote className="absolute -left-3 -top-2 w-6 h-6 text-neutral-700 bg-neutral-950" />
                   <p className="text-lg italic text-neutral-400">
                     "A verdadeira virada começa dentro da gente. A meia-noite só celebra."
@@ -153,11 +149,11 @@ export default function HomePage() {
                 </div>
               </div>
               
-                <div className="w-full lg:w-[380px] bg-adventure-card/50 rounded-2xl p-6 border border-neutral-300 z-10 flex flex-col">
+                <div className="w-full lg:w-[380px] bg-adventure-card/50 rounded-2xl p-4 sm:p-6 border border-neutral-300 z-10 flex flex-col">
                 <div className="mb-6">
                   <p className="text-sm text-neutral-400 mb-1">Investimento</p>
                   <div className="flex items-end gap-2">
-                    <p className="text-4xl font-bold text-slate-900">A partir de R$ 890</p>
+                    <p className="text-3xl sm:text-4xl font-bold text-slate-900">A partir de R$ 890</p>
                     <p className="text-sm text-neutral-400 mb-1">,00</p>
                   </div>
                 </div>
@@ -368,7 +364,7 @@ export default function HomePage() {
 
       {/* 7. CTA Final Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-t border-neutral-800">
-        <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 to-neutral-950 z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-neutral-900 sm:from-neutral-900 sm:to-neutral-950 z-0"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]"></div>
         
         <div className="max-w-4xl mx-auto relative z-10 text-center">

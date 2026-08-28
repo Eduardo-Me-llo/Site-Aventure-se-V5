@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { 
   MapPin, Calendar, Clock, ChevronLeft, Share2, 
   CheckCircle, X as XIcon, Star, Shield, 
@@ -19,9 +19,25 @@ import {
 } from '@/lib/utils';
 import Link from 'next/link';
 
+const accommodationGallery: Record<string, { image_url: string; alt_text: string }[]> = {
+  'acc-camping': [
+    { image_url: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200&q=80', alt_text: 'Camping em área sombreada próximo ao mar' },
+    { image_url: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=1200&q=80', alt_text: 'Barracas em meio à natureza' },
+  ],
+  'acc-pousada': [
+    { image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80', alt_text: 'Área externa da pousada com piscina' },
+    { image_url: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=1200&q=80', alt_text: 'Quarto confortável da pousada' },
+  ],
+  'acc-suite': [
+    { image_url: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&q=80', alt_text: 'Interior confortável da Suíte Master' },
+    { image_url: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&q=80', alt_text: 'Cozinha compartilhada equipada' },
+  ],
+};
+
 export default function TripDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [trip, setTrip] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -68,6 +84,23 @@ export default function TripDetailsPage() {
   const days = calculateDays(trip.start_date, trip.end_date);
   const nights = calculateNights(trip.start_date, trip.end_date);
   const difficultyColor = getDifficultyColor(trip.difficulty);
+  const selectedAccommodationId = searchParams.get('acc');
+  const selectedAccommodation = trip.accommodations?.find((acc: any) => acc.id === selectedAccommodationId);
+  const selectedAccommodationImages = selectedAccommodation
+    ? [{
+        image_url: selectedAccommodation.image_url,
+        alt_text: `Acomodação: ${selectedAccommodation.label}`,
+      }, ...(accommodationGallery[selectedAccommodation.id] || [])].map((image, index) => ({
+        ...image,
+        id: `${selectedAccommodation.id}-image-${index}`,
+        trip_id: trip.id,
+        order_index: trip.images?.length + index || index,
+        created_at: new Date().toISOString(),
+      }))
+    : [];
+  const galleryImages = selectedAccommodation
+    ? [...(trip.images || []), ...selectedAccommodationImages]
+    : trip.images;
 
   return (
     <main className="min-h-screen bg-adventure-dark text-slate-900 pb-24 lg:pb-12 pt-24">
@@ -115,7 +148,7 @@ export default function TripDetailsPage() {
 
         {/* Image Gallery */}
         <div className="mb-12">
-          <TripGallery images={trip.images} />
+          <TripGallery images={galleryImages} />
         </div>
 
         {/* Two-column Layout */}
@@ -134,6 +167,32 @@ export default function TripDetailsPage() {
                 {trip.description}
               </div>
             </section>
+
+            {selectedAccommodation && (
+              <section className="rounded-2xl border border-blue-500/30 bg-blue-50/70 p-6 md:p-8 shadow-lg">
+                <div className="flex flex-col gap-3 mb-6">
+                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Sua hospedagem</span>
+                  <h2 className="text-3xl font-bold text-slate-900">{selectedAccommodation.label}</h2>
+                  <p className="text-slate-700 leading-relaxed">{selectedAccommodation.description}</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                  {selectedAccommodation.amenities?.map((amenity: string) => (
+                    <div key={amenity} className="flex items-start gap-2 text-sm text-slate-700">
+                      <CheckCircle className="w-4 h-4 mt-0.5 text-blue-500 shrink-0" />
+                      <span>{amenity}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {selectedAccommodation.check_in && (
+                  <div className="flex flex-wrap gap-3 text-sm font-medium text-slate-700 border-t border-blue-500/20 pt-4">
+                    <span>Check-in: {selectedAccommodation.check_in}</span>
+                    <span>Check-out: {selectedAccommodation.check_out}</span>
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* Included / Not Included */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-adventure-card/40 p-6 md:p-8 rounded-2xl border border-neutral-300">
@@ -205,16 +264,17 @@ export default function TripDetailsPage() {
                 <div className="grid gap-6">
                   {trip.accommodations.map((acc: any, idx: number) => {
                     const accommodationIcon = getAccommodationIcon(acc.type);
+                    const availableSpots = acc.capacity - acc.booked_count;
                     
                     return (
-                      <div key={idx} className="bg-adventure-card/50 border border-neutral-300 rounded-2xl p-6 hover:border-blue-500/30 transition-colors shadow-lg">
+                      <Link href={`/trips/${trip.slug}?acc=${acc.id}`} key={idx} className={`block bg-adventure-card/50 border rounded-2xl p-6 hover:border-blue-500/30 transition-colors shadow-lg ${selectedAccommodationId === acc.id ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-neutral-300'}`}>
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                           <div className="flex items-center gap-4">
                             <div className="p-3 bg-adventure-card rounded-xl text-blue-400 border border-neutral-300">
                               <span className="text-2xl leading-none" aria-hidden="true">{accommodationIcon}</span>
                             </div>
                             <div>
-                              <h3 className="text-xl font-bold text-slate-900">{acc.name}</h3>
+                              <h3 className="text-xl font-bold text-slate-900">{acc.label}</h3>
                               <div className="flex items-center gap-2 text-sm text-slate-700 mt-1">
                                 <span className="capitalize">{acc.type}</span>
                                 <span className="text-zinc-600">•</span>
@@ -248,36 +308,62 @@ export default function TripDetailsPage() {
                         {/* Status/Capacity footer */}
                         <div className="flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-neutral-300 mt-2">
                           <div className="flex items-center gap-4 text-sm">
-                            {acc.checkIn && (
+                            {acc.check_in && (
                               <div className="flex items-center gap-1.5 text-slate-700 font-medium">
                                 <Clock className="w-4 h-4 text-blue-500/70" />
-                                In: {acc.checkIn} / Out: {acc.checkOut}
+                                Check-in: {acc.check_in} / Check-out: {acc.check_out}
                               </div>
                             )}
                           </div>
                           
                           <div className={`text-sm font-semibold flex items-center gap-2 px-3 py-1.5 rounded-full ${
-                            acc.spotsLeft <= 5 
+                            availableSpots <= 5
                               ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
                               : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                           }`}>
                             <Users className="w-4 h-4" />
-                            {acc.spotsLeft} vagas restantes
+                            {availableSpots} vagas restantes
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
               </section>
             )}
+
+            <section className="rounded-2xl border border-neutral-300 bg-adventure-card/50 p-6 md:p-8 shadow-lg">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Transporte</h2>
+              <p className="text-slate-700 leading-relaxed mb-6">
+                Você poderá escolher seu pacote <strong>com ou sem transporte</strong>.
+              </p>
+              <p className="text-slate-700 leading-relaxed">
+                Na opção com transporte, teremos ida e volta saindo do Rio de Janeiro, com chegada próxima às hospedagens para tornar toda a logística mais simples.
+              </p>
+
+              <div className="border-t border-neutral-300 mt-8 pt-8">
+                <h2 className="text-2xl font-bold text-slate-900 mb-5">Um novo ano começa antes da contagem regressiva</h2>
+                <div className="space-y-4 text-slate-700 leading-relaxed">
+                  <p>Talvez você venha pela praia.</p>
+                  <p>Talvez pelas festas.</p>
+                  <p>Talvez pelas experiências.</p>
+                  <p>Ou talvez esteja simplesmente precisando de alguns dias para respirar e sentir a vida acontecendo de novo.</p>
+                  <p>No fim, não importa apenas como você chega em Ubatumirim.</p>
+                  <p><strong>Importa como você volta.</strong></p>
+                  <p>De 29 de dezembro a 03 de janeiro, nossa casa será de frente para o mar.</p>
+                  <p>Corpo em movimento.<br />Mente presente.<br />Gente de verdade.<br />Natureza.<br />Música.<br />Celebração.</p>
+                  <p><strong>A verdadeira virada começa dentro da gente. A meia-noite só celebra.</strong></p>
+                  <p>Nos vemos em Ubatumirim. 🌊</p>
+                </div>
+              </div>
+            </section>
             
           </div>
 
           {/* Right Column (Sticky Widget) */}
           <div className="lg:col-span-5 xl:col-span-4 hidden lg:block">
             <div className="sticky top-28">
-              <BookingWidget trip={trip} />
+              <BookingWidget trip={trip} initialAccommodationId={selectedAccommodationId} />
             </div>
           </div>
           

@@ -9,6 +9,7 @@ import {
 import { getTripById, validateCoupon, calculateDiscount, createBooking, confirmBooking } from '@/lib/store';
 import { formatCurrency, formatDateRange } from '@/lib/utils';
 import { BookingFormData, Coupon } from '@/types';
+import { getPackagePrice, PIX_DISCOUNT } from '@/lib/pricing';
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -69,7 +70,7 @@ export default function CheckoutPage() {
         }
         
         if (trpId && tripData.transport_options) {
-          const trp = tripData.transport_options.find((t: any) => t.id === trpId);
+          const trp = tripData.transport_options.find((t: any) => t.id === trpId || (trpId === 'transport' && t.has_transport));
           if (trp) setSelectedTrp(trp);
         }
         
@@ -195,14 +196,16 @@ export default function CheckoutPage() {
   const basePrice = trip.price || 0;
   const accPrice = selectedAcc?.price || 0;
   const trpPrice = selectedTrp?.price || 0;
-  const subtotal = basePrice + accPrice + trpPrice;
+  const subtotal = basePrice + (selectedAcc
+    ? getPackagePrice(selectedAcc, Boolean(selectedTrp?.has_transport), 'credit_card')
+    : trpPrice);
   
   let discountAmount = 0;
   if (appliedCoupon) {
     discountAmount = calculateDiscount(appliedCoupon, subtotal);
   }
   
-  const pixDiscount = paymentMethod === 'pix' ? (subtotal - discountAmount) * 0.05 : 0;
+  const pixDiscount = paymentMethod === 'pix' ? PIX_DISCOUNT : 0;
   const total = subtotal - discountAmount - pixDiscount;
 
   return (
@@ -240,7 +243,7 @@ export default function CheckoutPage() {
           {/* Left Column - Form */}
           <div className="w-full lg:w-3/5">
             {currentStep === 1 && (
-              <div className="bg-adventure-card border border-neutral-300 rounded-2xl p-6 sm:p-8 shadow-xl">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-8 shadow-xl">
                 <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
                   <User className="w-6 h-6 mr-3 text-blue-500" />
                   Dados do Passageiro
@@ -248,7 +251,7 @@ export default function CheckoutPage() {
                 
                 <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); setCurrentStep(2); }}>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Nome completo</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Nome completo</label>
                     <input 
                       required
                       type="text" 
@@ -262,7 +265,7 @@ export default function CheckoutPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1.5">CPF</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">CPF</label>
                       <input 
                         required
                         type="text" 
@@ -274,7 +277,7 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-1.5">Telefone</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Telefone</label>
                       <input 
                         required
                         type="tel" 
@@ -287,31 +290,31 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   
-                  <div className="pt-4 border-t border-slate-800">
-                    <h3 className="text-lg font-medium text-white mb-4 flex items-center">
-                      <Phone className="w-5 h-5 mr-2 text-slate-400" />
+                  <div className="pt-4 border-t border-slate-200">
+                    <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center">
+                      <Phone className="w-5 h-5 mr-2 text-slate-500" />
                       Contato de Emergência
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Nome do contato</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Nome do contato</label>
                         <input 
                           type="text" 
                           name="passenger_emergency_contact"
                           value={formData.passenger_emergency_contact}
                           onChange={handleInputChange}
-                          className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none transition-all"
+                          className="w-full bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-500 outline-none transition-all"
                           placeholder="Nome do parente ou amigo"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Telefone de emergência</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Telefone de emergência</label>
                         <input 
                           type="tel" 
                           name="passenger_emergency_phone"
                           value={formData.passenger_emergency_phone}
                           onChange={handleInputChange}
-                          className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none transition-all"
+                          className="w-full bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-500 outline-none transition-all"
                           placeholder="(00) 00000-0000"
                         />
                       </div>
@@ -332,7 +335,7 @@ export default function CheckoutPage() {
             )}
 
             {currentStep === 2 && (
-              <div className="bg-adventure-card border border-neutral-300 rounded-2xl p-6 sm:p-8 shadow-xl">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-8 shadow-xl">
                 <div className="flex items-center mb-6">
                   <button onClick={() => setCurrentStep(1)} className="mr-3 text-slate-400 hover:text-white transition-colors">
                     <ChevronLeft className="w-6 h-6" />
@@ -342,7 +345,7 @@ export default function CheckoutPage() {
                 
                 {/* Coupon Section */}
                       <div className="mb-8 p-5 bg-adventure-card rounded-xl border border-neutral-300">
-                  <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center">
+                  <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
                     <Tag className="w-4 h-4 mr-2 text-blue-500" />
                     Cupom de desconto
                   </label>
@@ -351,7 +354,7 @@ export default function CheckoutPage() {
                       type="text" 
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      className="flex-1 bg-adventure-card border border-neutral-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg px-4 py-2 text-slate-900 outline-none uppercase"
+                      className="min-w-0 flex-1 bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg px-4 py-2 text-slate-900 outline-none uppercase"
                       placeholder="CÓDIGO"
                     />
                     <button 
@@ -370,13 +373,13 @@ export default function CheckoutPage() {
                 </div>
                 
                 {/* Payment Methods */}
-                    <div className="flex gap-4 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
                   <button
                     onClick={() => setPaymentMethod('pix')}
                     className={`flex-1 py-4 flex flex-col items-center justify-center rounded-xl border-2 transition-all ${
                       paymentMethod === 'pix' 
-                        ? 'border-blue-500 bg-blue-500/10 text-white' 
-                        : 'border-neutral-300 bg-adventure-card text-slate-700 hover:border-neutral-300'
+                        ? 'border-blue-500 bg-blue-50 text-slate-900 shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300'
                     }`}
                   >
                     <QrCode className="w-6 h-6 mb-2" />
@@ -388,8 +391,8 @@ export default function CheckoutPage() {
                     onClick={() => setPaymentMethod('credit_card')}
                     className={`flex-1 py-4 flex flex-col items-center justify-center rounded-xl border-2 transition-all ${
                       paymentMethod === 'credit_card' 
-                        ? 'border-blue-500 bg-blue-500/10 text-white' 
-                        : 'border-neutral-300 bg-adventure-card text-slate-700 hover:border-neutral-300'
+                        ? 'border-blue-500 bg-blue-50 text-slate-900 shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300'
                     }`}
                   >
                     <CreditCard className="w-6 h-6 mb-2" />
@@ -400,14 +403,14 @@ export default function CheckoutPage() {
                 
                 {/* PIX Tab */}
                 {paymentMethod === 'pix' && (
-                  <div className="bg-adventure-card border border-neutral-300 rounded-xl p-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="inline-flex items-center justify-center bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-sm font-medium mb-6">
                       <Clock className="w-4 h-4 mr-2" />
                       Expira em {formatTime(pixTimer)}
                     </div>
                     
                     {/* Simulated QR Code */}
-                    <div className="w-48 h-48 mx-auto bg-white rounded-xl p-3 mb-6 relative">
+                    <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto bg-white rounded-xl p-3 mb-6 relative shadow-sm">
                       <div className="w-full h-full grid grid-cols-6 grid-rows-6 gap-0.5">
                         {Array.from({ length: 36 }).map((_, i) => (
                           <div key={i} className={`bg-slate-900 ${Math.random() > 0.4 ? 'opacity-100' : 'opacity-0'}`}></div>
@@ -421,7 +424,7 @@ export default function CheckoutPage() {
                     
                     <div className="mb-6 text-left">
                       <label className="block text-sm font-medium text-slate-700 mb-2">Código Copia e Cola</label>
-                      <div className="flex bg-adventure-card border border-neutral-300 rounded-lg overflow-hidden">
+                      <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden">
                         <input 
                           type="text" 
                           readOnly 
@@ -451,7 +454,7 @@ export default function CheckoutPage() {
                   <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); processPayment(); }}>
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Número do cartão</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Número do cartão</label>
                         <div className="relative">
                           <input 
                             required
@@ -467,7 +470,7 @@ export default function CheckoutPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Nome no cartão</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Nome no cartão</label>
                         <input 
                           required
                           type="text" 
@@ -479,9 +482,9 @@ export default function CheckoutPage() {
                         />
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                          <label className="block text-sm font-medium text-slate-300 mb-1.5">Validade</label>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Validade</label>
                           <input 
                             required
                             type="text" 
@@ -493,7 +496,7 @@ export default function CheckoutPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-slate-300 mb-1.5">CVV</label>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">CVV</label>
                           <input 
                             required
                             type="text" 
@@ -507,7 +510,7 @@ export default function CheckoutPage() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Parcelamento</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Parcelamento</label>
                         <select 
                           name="installments"
                           value={cardData.installments}
@@ -554,13 +557,13 @@ export default function CheckoutPage() {
           
           {/* Right Column - Order Summary */}
           <div className="w-full lg:w-2/5 sticky top-24">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-white mb-6 border-b border-slate-800 pb-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xl">
+              <h3 className="text-lg font-bold text-slate-900 mb-6 border-b border-slate-200 pb-4">
                 Resumo da Compra
               </h3>
               
               <div className="mb-6">
-                <h4 className="font-semibold text-white mb-1">{trip.title}</h4>
+                <h4 className="font-semibold text-slate-900 mb-1">{trip.title}</h4>
                 <p className="text-sm text-slate-400">
                   {formatDateRange(trip.startDate, trip.endDate)} • {trip.durationDays} dias
                 </p>
@@ -585,7 +588,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
               
-              <div className="border-t border-slate-800 pt-4 space-y-3 mb-6">
+              <div className="border-t border-slate-200 pt-4 space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-300">Subtotal</span>
                   <span className="text-white">{formatCurrency(subtotal)}</span>
@@ -618,7 +621,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
               
-              <div className="bg-slate-950 rounded-xl p-4 flex items-center justify-center space-x-6 text-slate-400 text-xs">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-center gap-6 text-slate-500 text-xs">
                 <div className="flex flex-col items-center">
                   <Shield className="w-5 h-5 mb-1 text-blue-500/70" />
                   <span>Pagamento seguro</span>

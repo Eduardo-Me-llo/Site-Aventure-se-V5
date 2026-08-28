@@ -372,6 +372,7 @@ export default function AdminTripsPage() {
                 {(editingTrip.accommodations || []).map((accommodation, index) => (
                   <div key={accommodation.id} className="grid grid-cols-1 gap-3 rounded-xl bg-neutral-950 p-3 sm:grid-cols-4">
                     <input value={accommodation.label} onChange={e => updateAccommodation(index, { label: e.target.value })} placeholder="Nome" className="sm:col-span-2 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white" />
+                    <input value={accommodation.image_url || ''} onChange={e => updateAccommodation(index, { image_url: e.target.value })} placeholder="URL da imagem" className="sm:col-span-4 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white" />
                     <input type="number" min="0" step="0.01" value={accommodation.price} onChange={e => updateAccommodation(index, { price: Number(e.target.value) })} placeholder="Preço" className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white" />
                     <div className="flex gap-2">
                       <input type="number" min="0" value={accommodation.capacity} onChange={e => updateAccommodation(index, { capacity: Number(e.target.value) })} placeholder="Vagas" className="min-w-0 flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white" />
