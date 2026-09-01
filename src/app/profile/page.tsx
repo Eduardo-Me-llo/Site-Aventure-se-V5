@@ -1,49 +1,72 @@
 'use client';
 
-import { getAuthState, getBookings, getTripById, logout } from '@/lib/store';
 import { formatCurrency, formatDateRange, getPaymentStatusColor, getPaymentStatusLabel, formatDate } from '@/lib/utils';
 import { User, Mail, Phone, FileText, Calendar, CreditCard, Ticket, LogOut, Edit, Tent, Heart, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import { Booking, Trip } from '@/types';
+
+type ProfileAuthState = {
+  isAuthenticated: boolean;
+  user: { id: string; email: string; full_name: string } | null;
+};
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [authState, setAuthState] = useState<{ isAuthenticated: boolean; user: any }>({ isAuthenticated: false, user: null });
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [tripsCache, setTripsCache] = useState<Record<string, any>>({});
+  const [authState, setAuthState] = useState<ProfileAuthState>({ isAuthenticated: false, user: null });
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [tripsCache, setTripsCache] = useState<Record<string, Trip>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = () => {
-      const auth = getAuthState();
-      setAuthState(auth);
-      
-      if (auth.isAuthenticated && auth.user) {
-        const userBookings = getBookings().filter(b => b.user_id === auth.user?.id);
-        setBookings(userBookings);
-        
-        // Load trips for bookings
-        const trips: Record<string, any> = {};
-        userBookings.forEach(booking => {
-          if (!trips[booking.trip_id]) {
-            const trip = getTripById(booking.trip_id);
-            if (trip) {
-              trips[booking.trip_id] = trip;
-            }
-          }
-        });
-        setTripsCache(trips);
+    const loadData = async () => {
+      if (!isSupabaseConfigured) {
+        setLoading(false);
+        return;
       }
+
+      const supabase = createClient();
+      const { data: userData } = await supabase.auth.getUser();
+      const authUser = userData.user;
+      if (!authUser) {
+        setLoading(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', authUser.id)
+        .maybeSingle();
+
+      setAuthState({
+        isAuthenticated: true,
+        user: {
+          id: authUser.id,
+          email: authUser.email ?? '',
+          full_name: profile?.full_name || String(authUser.user_metadata.full_name || ''),
+        },
+      });
+
+      const { data: userBookings } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+      setBookings((userBookings ?? []) as Booking[]);
       setLoading(false);
     };
-    
-    loadData();
+
+    void loadData();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
+  const handleLogout = async () => {
+    if (isSupabaseConfigured) {
+      await createClient().auth.signOut();
+    }
+    router.replace('/');
+    router.refresh();
   };
 
   if (loading) {
@@ -75,9 +98,9 @@ export default function ProfilePage() {
   }
 
   const user = authState.user;
-  const initials = user.name ? user.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+  const initials = user.full_name ? user.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
-  const confirmedBookings = bookings.filter(b => b.payment_status === 'paid' || b.payment_status === 'processing');
+  const confirmedBookings = bookings.filter(b => b.payment_status === 'confirmed');
   const totalInvested = confirmedBookings.reduce((sum, b) => sum + b.total_amount, 0);
   
   // Find next trip (simplified logic assuming upcoming dates based on trip data if available, but for now just showing mock info)
@@ -93,7 +116,7 @@ export default function ProfilePage() {
             {initials}
           </div>
           <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">{user.name}</h1>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">{user.full_name}</h1>
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-6 text-slate-700 mb-6">
               <span className="flex items-center gap-2"><Mail className="w-4 h-4" /> {user.email}</span>
             </div>
@@ -160,7 +183,7 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                    <input type="text" defaultValue={user.name} className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                    <input type="text" defaultValue={user.full_name} className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
                   </div>
                 </div>
                 
@@ -273,7 +296,7 @@ export default function ProfilePage() {
                             {booking.accommodation && (
                               <div className="flex items-center gap-2">
                                 <Tent className="w-4 h-4 text-neutral-500" />
-                                <span className="capitalize">{booking.accommodation.replace('_', ' ')}</span>
+                                <span>{booking.accommodation.label}</span>
                               </div>
                             )}
                           </div>

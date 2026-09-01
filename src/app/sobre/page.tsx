@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Compass, Heart, Mountain, Shield, Users } from 'lucide-react';
+import { ArrowRight, Compass, Heart, Mountain, Shield, Users, Sparkles, MapPinned, Route } from 'lucide-react';
 
 const team = [
   {
@@ -25,6 +25,18 @@ const team = [
   }
 ];
 
+const values = [
+  { icon: Compass, title: 'Curadoria com alma', text: 'Roteiros pensados para equilibrar aventura, conforto e tempo para viver cada destino.' },
+  { icon: Shield, title: 'Cuidado em cada etapa', text: 'A operação é desenhada para deixar cada passo claro, seguro e acolhedor.' },
+  { icon: Heart, title: 'Conexões reais', text: 'Criamos experiências em grupo que aproximam pessoas, comunidades e a natureza.' },
+];
+
+const journeySteps = [
+  'Escolhemos destinos com identidade, clima e beleza genuína.',
+  'Organizamos cada detalhe para que a experiência seja tranquila antes e durante a viagem.',
+  'Acompanhamos o grupo com atenção, energia e uma logística bem pensada.',
+];
+
 export default function AboutPage() {
   const [activeMember, setActiveMember] = useState(0);
   const member = team[activeMember];
@@ -34,12 +46,22 @@ export default function AboutPage() {
       <section className="px-4 sm:px-6 lg:px-8 py-20 md:py-28">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-12 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 text-sm font-semibold"> <Mountain className="w-4 h-4" /> Nossa história</span>
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-slate-900 mt-6 mb-6">Viajar é encontrar novas versões de si.</h1>
-            <p className="text-xl leading-relaxed text-slate-700 max-w-xl">O Aventure-se nasceu para aproximar pessoas de paisagens extraordinárias e criar viagens em grupo com cuidado, liberdade e boas histórias para contar.</p>
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 text-sm font-semibold">
+              <Mountain className="w-4 h-4" /> Nossa história
+            </span>
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-[#f7f3e9] mt-6 mb-6">
+              Viajar é encontrar novas versões de si.
+            </h1>
+            <p className="text-xl leading-relaxed text-slate-700 max-w-xl">
+              O Aventure-se nasceu para aproximar pessoas de paisagens extraordinárias e criar viagens em grupo com cuidado, liberdade e boas histórias para contar.
+            </p>
             <div className="flex flex-wrap gap-4 mt-8">
-              <Link href="/#trips-section" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-colors">Explorar viagens <ArrowRight className="w-4 h-4" /></Link>
-              <Link href="/auth/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-neutral-300 text-slate-900 font-semibold hover:bg-adventure-card transition-colors">Fazer parte</Link>
+              <Link href="/#trips-section" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-colors">
+                Explorar viagens <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link href="/auth/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-neutral-300 text-[#f7f3e9] font-semibold hover:bg-adventure-card transition-colors">
+                Fazer parte
+              </Link>
             </div>
           </div>
           <div className="relative min-h-[420px] rounded-[2rem] overflow-hidden border border-neutral-300 shadow-xl">
@@ -52,18 +74,99 @@ export default function AboutPage() {
 
       <section className="border-y border-neutral-300/70 bg-adventure-card/40 px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
-          {[{ icon: Compass, title: 'Curadoria com alma', text: 'Roteiros escolhidos para equilibrar aventura, conforto e tempo para viver o lugar.' }, { icon: Shield, title: 'Cuidado em cada etapa', text: 'Operação transparente e atenção às pessoas, do primeiro contato ao retorno.' }, { icon: Heart, title: 'Conexões reais', text: 'Experiências que aproximam viajantes, comunidades locais e a natureza.' }].map(({ icon: Icon, title, text }) => <article key={title} className="p-6 rounded-2xl bg-adventure-card border border-neutral-300"><Icon className="w-7 h-7 text-blue-500 mb-4" /><h2 className="text-xl font-bold text-slate-900 mb-2">{title}</h2><p className="text-slate-700 leading-relaxed">{text}</p></article>)}
+          {values.map(({ icon: Icon, title, text }) => (
+            <article key={title} className="p-6 rounded-2xl bg-adventure-card border border-neutral-300">
+              <Icon className="w-7 h-7 text-blue-500 mb-4" />
+              <h2 className="text-xl font-bold text-[#f7f3e9] mb-2">{title}</h2>
+              <p className="text-slate-700 leading-relaxed">{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-4 sm:px-6 lg:px-8 py-20">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-10 items-start">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold">
+              <Sparkles className="w-4 h-4" /> Nossa proposta
+            </div>
+            <h2 className="text-4xl font-bold text-[#f7f3e9]">Uma viagem pode mudar a forma como você olha para o mundo.</h2>
+            <p className="text-slate-700 leading-relaxed">
+              Acreditamos que a melhor aventura não é só aquela com paisagens incríveis, mas também com tempo para respirar, conectar e sentir o lugar com profundidade.
+            </p>
+            <div className="space-y-4 mt-8">
+              {journeySteps.map((step, index) => (
+                <div key={step} className="flex items-start gap-4 rounded-2xl border border-neutral-300 bg-adventure-card/50 p-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-400 font-bold text-sm">
+                    {index + 1}
+                  </div>
+                  <p className="text-slate-700 leading-relaxed">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-neutral-300 overflow-hidden bg-adventure-card">
+            <div className="grid md:grid-cols-2">
+              <div className="p-8 border-b md:border-b-0 md:border-r border-neutral-300">
+                <MapPinned className="w-8 h-8 text-blue-500 mb-4" />
+                <p className="text-sm uppercase tracking-wide text-blue-500 font-semibold">Impacto</p>
+                <p className="text-4xl font-bold mt-3 text-[#f7f3e9]">15+</p>
+                <p className="mt-2 text-slate-700">destinos selecionados com foco em experiência e autenticidade.</p>
+              </div>
+              <div className="p-8">
+                <Route className="w-8 h-8 text-blue-500 mb-4" />
+                <p className="text-sm uppercase tracking-wide text-blue-500 font-semibold">Experiência</p>
+                <p className="text-4xl font-bold mt-3 text-[#f7f3e9]">2k+</p>
+                <p className="mt-2 text-slate-700">aventureiros que já viveram jornadas inspiradoras com a gente.</p>
+              </div>
+            </div>
+            <div className="p-8 border-t border-neutral-300 bg-adventure-card/40">
+              <p className="text-sm uppercase tracking-wide text-blue-500 font-semibold mb-3">Como viajamos</p>
+              <p className="text-slate-700 leading-relaxed">
+                Temos uma abordagem leve, humana e bem estruturada: buscamos destinos com identidade, entregamos uma logística clara e criamos uma atmosfera que faz o grupo se sentir em casa, mesmo longe de casa.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="px-4 sm:px-6 lg:px-8 py-20">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10"><div><p className="text-blue-600 font-semibold uppercase tracking-wider text-sm">Quem faz acontecer</p><h2 className="text-4xl font-bold text-slate-900 mt-2">Uma equipe que vai com você</h2></div><p className="text-slate-700 max-w-md">Estas informações são demonstrativas e poderão ser atualizadas pelo administrador quando o conteúdo real estiver definido.</p></div>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+              <p className="text-blue-600 font-semibold uppercase tracking-wider text-sm">Quem faz acontecer</p>
+              <h2 className="text-4xl font-bold text-[#f7f3e9] mt-2">Uma equipe que vai com você</h2>
+            </div>
+            <p className="text-slate-700 max-w-md">
+              Estamos atentos aos detalhes, ao bem-estar do grupo e à energia da viagem para que cada passo tenha sentido.
+            </p>
+          </div>
           <div className="grid lg:grid-cols-[0.8fr_1.2fr] gap-8 items-stretch">
             <div className="grid grid-cols-3 lg:grid-cols-1 gap-3">
-              {team.map((person, index) => <button key={person.name} onClick={() => setActiveMember(index)} className={`flex items-center gap-3 text-left p-3 rounded-xl border transition-colors ${activeMember === index ? 'bg-blue-500/10 border-blue-500/40' : 'bg-adventure-card/50 border-neutral-300 hover:border-blue-500/30'}`}><img src={person.image} alt="" className="w-12 h-12 rounded-full object-cover" /><span className="hidden sm:block lg:block"><strong className="block text-slate-900">{person.name}</strong><small className="text-slate-600">{person.role}</small></span></button>)}
+              {team.map((person, index) => (
+                <button
+                  key={person.name}
+                  onClick={() => setActiveMember(index)}
+                  className={`flex items-center gap-3 text-left p-3 rounded-xl border transition-colors ${activeMember === index ? 'bg-blue-500/10 border-blue-500/40' : 'bg-adventure-card/50 border-neutral-300 hover:border-blue-500/30'}`}
+                >
+                  <img src={person.image} alt="" className="w-12 h-12 rounded-full object-cover" />
+                  <span className="hidden sm:block lg:block">
+                    <strong className="block text-[#f7f3e9]">{person.name}</strong>
+                    <small className="text-slate-600">{person.role}</small>
+                  </span>
+                </button>
+              ))}
             </div>
-            <article className="grid md:grid-cols-2 bg-adventure-card rounded-2xl overflow-hidden border border-neutral-300"><img src={member.image} alt={member.name} className="w-full h-full min-h-[300px] object-cover" /><div className="p-8 flex flex-col justify-center"><Users className="w-8 h-8 text-blue-500 mb-6" /><h3 className="text-3xl font-bold text-slate-900">{member.name}</h3><p className="text-blue-600 font-semibold mt-2">{member.role}</p><p className="text-slate-700 leading-relaxed mt-6">{member.bio}</p></div></article>
+            <article className="grid md:grid-cols-2 bg-adventure-card rounded-2xl overflow-hidden border border-neutral-300">
+              <img src={member.image} alt={member.name} className="w-full h-full min-h-[300px] object-cover" />
+              <div className="p-8 flex flex-col justify-center">
+                <Users className="w-8 h-8 text-blue-500 mb-6" />
+                <h3 className="text-3xl font-bold text-[#f7f3e9]">{member.name}</h3>
+                <p className="text-blue-600 font-semibold mt-2">{member.role}</p>
+                <p className="text-slate-700 leading-relaxed mt-6">{member.bio}</p>
+              </div>
+            </article>
           </div>
         </div>
       </section>

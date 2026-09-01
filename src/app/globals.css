@@ -51,9 +51,36 @@ html, body {
   @apply bg-adventure-dark text-slate-900 antialiased scroll-smooth;
 }
 
-h1 {
+:root {
+  --color-adventure-beige: #f7f3e9;
+}
+
+h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display), Georgia, serif;
   letter-spacing: 0;
+}
+
+button.bg-blue-600,
+button.bg-blue-500,
+button.bg-blue-400,
+button.bg-gradient-to-r,
+.bg-gradient-to-r,
+.bg-blue-600,
+.bg-blue-500,
+.bg-blue-400,
+.bg-indigo-500,
+[class*="from-blue-"],
+[class*="to-blue-"] {
+  color: #ffffff !important;
+}
+
+button.bg-amber-500,
+button.bg-amber-600,
+button.bg-amber-400,
+.bg-amber-500,
+.bg-amber-600,
+.bg-amber-400 {
+  color: #111827 !important;
 }
 
 /* Custom Scrollbar */

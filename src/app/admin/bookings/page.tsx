@@ -93,7 +93,7 @@ export default function AdminBookingsPage() {
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-neutral-800 pb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-3xl font-bold tracking-tight text-[#f7f3e9]">
               Gerenciar Vendas
             </h1>
             <p className="text-slate-700 mt-1">Controle de reservas, pagamentos e emissão de listas.</p>

@@ -1,3 +1,26 @@
+## Aventure-se
+
+Plataforma de turismo de aventura construída com Next.js, Supabase e Tailwind CSS.
+
+### Configurar autenticação e banco
+
+1. Crie um projeto no Supabase.
+2. Execute `supabase/schema.sql` no SQL Editor.
+3. Para um banco já existente, execute as migrações de `supabase/migrations/` em ordem.
+4. Copie `.env.example` para `.env.local` e preencha a URL e a chave publicável do projeto.
+5. Em **Authentication > URL Configuration**, inclua `http://localhost:3000/auth/callback` e a URL de produção.
+6. Crie o primeiro usuário pelo cadastro e promova-o manualmente no SQL Editor:
+
+```sql
+UPDATE public.profiles
+SET role = 'admin'
+WHERE user_id = '<UUID_DO_USUARIO_DO_AUTH>';
+```
+
+Nunca use uma `service_role` no navegador ou em variáveis `NEXT_PUBLIC_*`.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

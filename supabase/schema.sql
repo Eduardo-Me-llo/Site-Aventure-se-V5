@@ -203,11 +203,13 @@ CREATE POLICY "Admins can view all profiles" ON public.profiles
 
 -- Usuários podem inserir seu próprio perfil
 CREATE POLICY "Users can insert own profile" ON public.profiles
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND role = 'user');
 
 -- Usuários podem atualizar seu próprio perfil
 CREATE POLICY "Users can update own profile" ON public.profiles
-  FOR UPDATE USING (auth.uid() = user_id);
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id AND role = 'user');
 
 -- ---- TRIPS ----
 -- Leitura pública de viagens ativas
@@ -293,6 +295,30 @@ CREATE TRIGGER set_trips_updated_at
 CREATE TRIGGER set_bookings_updated_at
   BEFORE UPDATE ON public.bookings
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- Cria automaticamente o perfil público de cada novo usuário do Supabase Auth.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (user_id, full_name, phone, document)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data ->> 'full_name', ''),
+    COALESCE(NEW.raw_user_meta_data ->> 'phone', ''),
+    COALESCE(NEW.raw_user_meta_data ->> 'document', '')
+  )
+  ON CONFLICT (user_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- =====================================================
 -- SEED DATA: Réveillon Aventure-se 2026/2027 em Ubatuba

@@ -1,25 +1,23 @@
-// =====================================================
-// AVENTURE-SE — Supabase Client (placeholder)
-// Configure suas credenciais em .env.local
-// =====================================================
+import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseConfig } from '@/lib/supabase/config';
 
-// import { createClient } from '@supabase/supabase-js';
+let browserClient: SupabaseClient | undefined;
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+/**
+ * Returns the browser Supabase client used only by Client Components.
+ * Authentication tokens are stored as cookies so the server can verify them.
+ */
+export function createClient(): SupabaseClient {
+  if (browserClient) return browserClient;
 
-// Descomente quando configurar o Supabase:
-// export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const config = getSupabaseConfig();
+  if (!config) {
+    throw new Error('Supabase não está configurado. Adicione as variáveis de ambiente em .env.local.');
+  }
 
-// Por enquanto, utilizamos o mock data provider em src/lib/store.ts
-// Para ativar o Supabase:
-// 1. Crie um projeto no https://supabase.com
-// 2. Execute o script supabase/schema.sql no SQL Editor
-// 3. Copie a URL e Anon Key para .env.local:
-//    NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-//    NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
-// 4. Descomente o createClient acima e importe onde necessário
+  browserClient = createBrowserClient(config.url, config.publishableKey);
+  return browserClient;
+}
 
-export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
-
-export { supabaseUrl, supabaseAnonKey };
+export { isSupabaseConfigured } from '@/lib/supabase/config';

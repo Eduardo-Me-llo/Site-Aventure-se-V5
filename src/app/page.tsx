@@ -153,8 +153,7 @@ export default function HomePage() {
                 <div className="mb-6">
                   <p className="text-sm text-neutral-400 mb-1">Investimento</p>
                   <div className="flex items-end gap-2">
-                    <p className="text-3xl sm:text-4xl font-bold text-slate-900">A partir de R$ 890</p>
-                    <p className="text-sm text-neutral-400 mb-1">,00</p>
+                    <p className="text-3xl sm:text-4xl font-bold text-slate-900">A partir de R$ 1.047</p>
                   </div>
                 </div>
                 
@@ -317,25 +316,25 @@ export default function HomePage() {
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">O que nossos aventureiros dizem</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">O que os aventureiros dizem</h2>
             <p className="text-xl text-slate-700">Experiências reais de quem já viajou com a gente</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                name: 'Mariana Silva',
-                trip: 'Réveillon Ubatuba 2025',
+                name: 'Mariana',
+                trip: 'Réveillon Palmas - Ilha Grande 2025/2026',
                 text: 'Foi a melhor virada de ano da minha vida! A energia da galera, a organização impecável e as paisagens... Indescritível. Já estou garantindo minha vaga pro próximo.'
               },
               {
                 name: 'Pedro Henrique',
-                trip: 'Travessia Petrópolis-Teresópolis',
+                trip: 'Prumirim - Ubatuba',
                 text: 'Atenção aos detalhes e segurança em primeiro lugar. Os guias foram incríveis e a comida no acampamento estava sensacional. Recomendo de olhos fechados!'
               },
               {
-                name: 'Camila Costa',
-                trip: 'Retiro de Yoga Ilha Grande',
+                name: 'Camila',
+                trip: 'Araçatiba - Ilha Grande',
                 text: 'Uma experiência de desconexão e reconexão. O equilíbrio perfeito entre aventura e descanso. Voltei renovada e com vários amigos novos!'
               }
             ].map((test, idx) => (

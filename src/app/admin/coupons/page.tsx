@@ -89,7 +89,7 @@ export default function AdminCouponsPage() {
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-[#f7f3e9] flex items-center gap-3">
               Gerenciar Cupons
             </h1>
             <p className="text-slate-700 mt-1">Crie códigos de desconto promocionais para seus clientes.</p>

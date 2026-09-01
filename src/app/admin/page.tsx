@@ -73,7 +73,7 @@ export default function AdminDashboardPage() {
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-300 pb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-[#f7f3e9] flex items-center gap-3">
               <Settings className="w-8 h-8 text-blue-500" />
               Painel Administrativo
             </h1>

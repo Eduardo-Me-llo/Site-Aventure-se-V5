@@ -14,7 +14,6 @@ const STORAGE_KEYS = {
   BOOKINGS: 'aventurese_bookings',
   USERS: 'aventurese_users',
   HOME_IMAGE: 'aventurese_home_image',
-  AUTH: 'aventurese_auth',
 } as const;
 
 export interface RegisteredUser {
@@ -357,63 +356,4 @@ export function getDashboardMetrics(tripId?: string): DashboardMetrics {
     revenueByAccommodation: Object.entries(revenueMap).map(([type, data]) => ({ type, ...data })),
     recentBookings: allBookings.slice(-5).reverse(),
   };
-}
-
-// ---- AUTH (Simplified) ----
-
-export interface AuthState {
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  user: {
-    id: string;
-    email: string;
-    full_name: string;
-  } | null;
-}
-
-export function getAuthState(): AuthState {
-  return getFromStorage<AuthState>(STORAGE_KEYS.AUTH, {
-    isAuthenticated: false,
-    isAdmin: false,
-    user: null,
-  });
-}
-
-export function loginAsAdmin(): void {
-  setToStorage(STORAGE_KEYS.AUTH, {
-    isAuthenticated: true,
-    isAdmin: true,
-    user: {
-      id: 'admin-001',
-      email: 'admin@aventurese.com.br',
-      full_name: 'Administrador',
-    },
-  });
-}
-
-export function loginAsUser(name: string, email: string, details?: Pick<RegisteredUser, 'phone' | 'document'>): void {
-  const existingUser = getRegisteredUsers().find(user => user.email.toLowerCase() === email.toLowerCase());
-  saveRegisteredUser(existingUser || {
-    id: `user-${Date.now()}`,
-    full_name: name,
-    email,
-    phone: details?.phone || '',
-    document: details?.document || '',
-    status: 'active',
-    created_at: new Date().toISOString(),
-  });
-  setToStorage(STORAGE_KEYS.AUTH, {
-    isAuthenticated: true,
-    isAdmin: false,
-    user: {
-      id: `user-${Date.now()}`,
-      email,
-      full_name: name,
-    },
-  });
-}
-
-export function logout(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEYS.AUTH);
 }

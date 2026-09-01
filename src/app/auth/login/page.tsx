@@ -3,41 +3,59 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from 'lucide-react';
-import { loginAsAdmin, loginAsUser } from '@/lib/store';
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('aventurese_remembered_email') || '' : '');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(() => typeof window !== 'undefined' && !!localStorage.getItem('aventurese_remembered_email'));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState('');
 
-  const handleUserLogin = (e?: React.FormEvent) => {
+  const handleUserLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setFeedback('');
-    setIsSubmitting(true);
-    if (rememberMe) {
-      localStorage.setItem('aventurese_remembered_email', email.trim());
-    } else {
-      localStorage.removeItem('aventurese_remembered_email');
+    if (!isSupabaseConfigured) {
+      setFeedback('A autenticação ainda não foi configurada. Adicione as credenciais do Supabase em .env.local.');
+      return;
     }
-    loginAsUser('Aventureiro Local', email || 'user@aventurese.com.br');
-    router.push('/');
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await createClient().auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setFeedback(error.message);
+        return;
+      }
+
+      router.replace('/profile');
+      router.refresh();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleForgotPassword = () => {
-    setFeedback(email.trim()
-      ? `A recuperação para ${email.trim()} será habilitada quando o Supabase estiver conectado.`
-      : 'Informe seu e-mail. A recuperação será habilitada quando o Supabase estiver conectado.');
-  };
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setFeedback('Informe seu e-mail para receber o link de recuperação.');
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      setFeedback('A recuperação de senha exige a configuração do Supabase.');
+      return;
+    }
 
-  const handleAdminLogin = () => {
-    loginAsAdmin();
-    router.push('/admin');
+    const { error } = await createClient().auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+    });
+    setFeedback(error ? error.message : 'Enviamos um link de recuperação para seu e-mail.');
   };
 
   return (
@@ -80,11 +98,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center pl-1">
-              <input id="remember" type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 rounded border-neutral-300 bg-adventure-card text-blue-500 focus:ring-blue-500/50 focus:ring-offset-adventure-dark" />
-              <label htmlFor="remember" className="ml-2 block text-sm text-slate-700">Lembrar de mim</label>
-            </div>
-
             <button type="submit" disabled={isSubmitting} className="w-full py-3 px-4 flex items-center justify-center gap-2 rounded-xl text-white font-medium bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 disabled:opacity-70 disabled:cursor-wait focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-adventure-dark transition-all shadow-lg shadow-blue-900/30">
               {isSubmitting ? 'Entrando...' : 'Entrar'} {!isSubmitting && <ArrowRight className="w-4 h-4" />}
             </button>
@@ -99,10 +112,6 @@ export default function LoginPage() {
 
         <div className="mt-8 text-center space-y-4">
           <p className="text-slate-700">Não tem conta? <Link href="/auth/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">Cadastre-se</Link></p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
-            <button onClick={handleAdminLogin} className="text-slate-700 hover:text-slate-900 transition-colors bg-adventure-card/50 px-3 py-1.5 rounded-full border border-neutral-300">Acessar como Admin</button>
-            <button onClick={() => handleUserLogin()} className="text-slate-700 hover:text-slate-900 transition-colors bg-adventure-card/50 px-3 py-1.5 rounded-full border border-neutral-300 flex items-center gap-1"><User className="w-3 h-3" /> Acessar como Aventureiro</button>
-          </div>
         </div>
       </div>
     </div>

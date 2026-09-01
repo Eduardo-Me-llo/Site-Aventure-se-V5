@@ -34,10 +34,9 @@ export function Footer() {
           <div className="flex flex-col gap-4">
             <h3 className="text-slate-900 font-semibold text-lg">Destinos</h3>
             <ul className="flex flex-col gap-3 text-sm">
-              <li><Link href="/#trips-section" className="hover:text-blue-400 transition-colors">Patagônia, Argentina</Link></li>
-              <li><Link href="/#trips-section" className="hover:text-blue-400 transition-colors">Deserto do Atacama, Chile</Link></li>
-              <li><Link href="/#trips-section" className="hover:text-blue-400 transition-colors">Jalapão, Brasil</Link></li>
-              <li><Link href="/#trips-section" className="hover:text-blue-400 transition-colors">Chapada Diamantina, Brasil</Link></li>
+                            <li><Link href="/#trips-section" className="hover:text-blue-400 transition-colors">São Tomé das Letras, Minas Gerais</Link></li>
+              <li><Link href="/#trips-section" className="hover:text-blue-400 transition-colors">Palmas, Ilha Grande, Rio de Janeiro</Link></li>
+              <li><Link href="/#trips-section" className="hover:text-blue-400 transition-colors">Prumirim, Ubatuba, Rio de Janeiro</Link></li>
               <li><Link href="/#trips-section" className="text-blue-500 hover:text-blue-400 font-medium transition-colors">Ver todos os destinos &rarr;</Link></li>
             </ul>
           </div>
@@ -48,14 +47,13 @@ export function Footer() {
             <ul className="flex flex-col gap-3 text-sm">
               <li><Link href="/sobre" className="hover:text-blue-400 transition-colors">Sobre Nós</Link></li>
               <li><Link href="/faq" className="hover:text-blue-400 transition-colors">FAQ</Link></li>
-              <li><Link href="/blog" className="hover:text-blue-400 transition-colors">Blog</Link></li>
               <li><Link href="/contato" className="hover:text-blue-400 transition-colors">Contato</Link></li>
             </ul>
           </div>
 
           {/* Newsletter / Contato */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-slate-900 font-semibold text-lg">Newsletter</h3>
+            
             <p className="text-slate-400 text-sm">
               Receba novidades e ofertas exclusivas.
             </p>
