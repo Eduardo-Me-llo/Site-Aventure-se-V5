@@ -36,14 +36,11 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
-          <Link href="#destinos" className="text-slate-900 hover:text-blue-500 transition-colors text-sm font-medium tracking-wide">
-            Destinos
+          <Link href="/#trips-section" className="text-slate-900 hover:text-blue-500 transition-colors text-sm font-medium tracking-wide">
+            Próximos Destinos
           </Link>
-          <Link href="#como-funciona" className="text-slate-900 hover:text-blue-500 transition-colors text-sm font-medium tracking-wide">
-            Como Funciona
-          </Link>
-          <Link href="#sobre-nos" className="text-slate-900 hover:text-blue-500 transition-colors text-sm font-medium tracking-wide">
-            Sobre Nós
+          <Link href="/sobre" className={`transition-colors text-sm font-medium tracking-wide ${pathname === '/sobre' ? 'text-blue-600' : 'text-slate-900 hover:text-blue-500'}`}>
+            Sobre nós
           </Link>
         </nav>
 
@@ -82,25 +79,18 @@ export default function Navbar() {
       >
         <div className="flex flex-col px-6 gap-4">
             <Link
-              href="#destinos"
+              href="/#trips-section"
               onClick={() => setIsMobileMenuOpen(false)}
               className="text-slate-900 hover:text-blue-500 py-2 border-b border-neutral-300/10"
             >
-            Destinos
+            Próximos Destinos
           </Link>
           <Link
-            href="#como-funciona"
+            href="/sobre"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="text-slate-900 hover:text-blue-500 py-2 border-b border-white/10"
+            className={`py-2 border-b border-white/10 ${pathname === '/sobre' ? 'text-blue-600' : 'text-slate-900 hover:text-blue-500'}`}
           >
-            Como Funciona
-          </Link>
-          <Link
-            href="#sobre-nos"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="text-slate-900 hover:text-blue-500 py-2 border-b border-white/10"
-          >
-            Sobre Nós
+            Sobre nós
           </Link>
           
           <div className="flex flex-col gap-3 mt-2">

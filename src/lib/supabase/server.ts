@@ -8,7 +8,7 @@ import { getSupabaseConfig } from '@/lib/supabase/config';
 export async function createClient() {
   const config = getSupabaseConfig();
   if (!config) {
-    throw new Error('Supabase não está configurado.');
+    throw new Error('Banco de dados não está configurado.');
   }
 
   const cookieStore = await cookies();

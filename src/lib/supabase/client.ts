@@ -13,7 +13,7 @@ export function createClient(): SupabaseClient {
 
   const config = getSupabaseConfig();
   if (!config) {
-    throw new Error('Supabase não está configurado. Adicione as variáveis de ambiente em .env.local.');
+    throw new Error('Banco de dados não configurado, entre em contato com o administrador do sistema.');
   }
 
   browserClient = createBrowserClient(config.url, config.publishableKey);
