@@ -9,6 +9,8 @@ import {
 import { getTripById, validateCoupon, calculateDiscount, createBooking, confirmBooking } from '@/lib/store';
 import { formatCurrency, formatDateRange } from '@/lib/utils';
 import { BookingFormData, Coupon } from '@/types';
+import Link from 'next/link';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { getPackagePrice, PIX_DISCOUNT } from '@/lib/pricing';
 
 export default function CheckoutPage() {
@@ -31,9 +33,14 @@ export default function CheckoutPage() {
     passenger_name: '',
     passenger_document: '',
     passenger_phone: '',
+    passenger_rg: '', passenger_rg_issuer: '', passenger_birth_date: '', passenger_neighborhood: '',
     passenger_emergency_contact: '',
-    passenger_emergency_phone: ''
+    passenger_emergency_phone: '', passenger_health_condition: '', passenger_medication: '',
+    passenger_physical_fitness: false, passenger_terms_accepted: false, accommodation_companions: '',
+    departure_location: '', departure_time_preference: '', residence_location: '', referral_source: '',
+    payment_option: 'pix_cash'
   });
+  const [commitmentTerms, setCommitmentTerms] = useState('');
   
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card'>('pix');
   const [couponCode, setCouponCode] = useState('');
@@ -85,6 +92,12 @@ export default function CheckoutPage() {
   }, [tripId, accId, trpId]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    void createClient().from('site_settings').select('value').eq('key', 'commitment_terms').maybeSingle()
+      .then(({ data }) => setCommitmentTerms(data?.value || ''));
+  }, []);
+
+  useEffect(() => {
     if (paymentMethod === 'pix' && currentStep === 2) {
       const timer = setInterval(() => {
         setPixTimer((prev) => (prev > 0 ? prev - 1 : 0));
@@ -99,7 +112,7 @@ export default function CheckoutPage() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
@@ -140,6 +153,19 @@ export default function CheckoutPage() {
         passenger_name: formData.passenger_name,
         passenger_document: formData.passenger_document,
         passenger_phone: formData.passenger_phone,
+        passenger_rg: formData.passenger_rg,
+        passenger_rg_issuer: formData.passenger_rg_issuer,
+        passenger_birth_date: formData.passenger_birth_date,
+        passenger_neighborhood: formData.passenger_neighborhood,
+        passenger_health_condition: formData.passenger_health_condition,
+        passenger_medication: formData.passenger_medication,
+        passenger_physical_fitness: formData.passenger_physical_fitness,
+        passenger_terms_accepted: formData.passenger_terms_accepted,
+        accommodation_companions: formData.accommodation_companions,
+        departure_location: formData.departure_location,
+        departure_time_preference: formData.departure_time_preference,
+        residence_location: formData.residence_location,
+        referral_source: formData.referral_source,
         passenger_emergency_contact: formData.passenger_emergency_contact,
         passenger_emergency_phone: formData.passenger_emergency_phone,
         accommodation_id: selectedAcc?.id || '',
@@ -147,6 +173,7 @@ export default function CheckoutPage() {
         coupon_code: appliedCoupon?.code || '',
         payment_method: paymentMethod,
         payment_installments: paymentMethod === 'credit_card' ? Number(cardData.installments) : 1
+        , payment_option: formData.payment_option
       };
       
       const booking = await createBooking(
@@ -289,6 +316,14 @@ export default function CheckoutPage() {
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Número do RG*</label><input required name="passenger_rg" value={formData.passenger_rg} onChange={handleInputChange} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Órgão expedidor*</label><input required name="passenger_rg_issuer" value={formData.passenger_rg_issuer} onChange={handleInputChange} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Data de nascimento*</label><input required type="date" name="passenger_birth_date" value={formData.passenger_birth_date} onChange={handleInputChange} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Bairro onde mora?</label><input name="passenger_neighborhood" value={formData.passenger_neighborhood} onChange={handleInputChange} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" /></div>
+                    <div className="md:col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1.5">Local onde mora?</label><input name="residence_location" value={formData.residence_location} onChange={handleInputChange} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" /></div>
+                  </div>
                   
                   <div className="pt-4 border-t border-slate-200">
                     <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center">
@@ -319,6 +354,17 @@ export default function CheckoutPage() {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  <div className="space-y-5 border-t border-slate-200 pt-5">
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Problema de saúde? Se sim, qual?*</label><textarea required name="passenger_health_condition" value={formData.passenger_health_condition} onChange={handleInputChange} rows={2} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Faz uso de medicamento? Se sim, qual?</label><textarea name="passenger_medication" value={formData.passenger_medication} onChange={handleInputChange} rows={2} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1.5">Quem dividirá a acomodação com você?</label><textarea name="accommodation_companions" value={formData.accommodation_companions} onChange={handleInputChange} rows={2} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" /></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5"><div><label className="block text-sm font-medium text-slate-700 mb-1.5">Local de saída</label><select name="departure_location" value={formData.departure_location} onChange={handleInputChange} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900"><option value="">Selecione</option><option>Posto Select - Niterói</option><option>Praça Afonso Pena - Tijuca</option></select></div><div><label className="block text-sm font-medium text-slate-700 mb-1.5">Horário de saída*</label><select required name="departure_time_preference" value={formData.departure_time_preference} onChange={handleInputChange} className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900"><option value="">Selecione</option><option value="morning">Dia 29 de manhã cedinho</option><option value="night">Dia 29 à noite, pós-expediente</option></select></div></div>
+                    <input name="referral_source" value={formData.referral_source} onChange={handleInputChange} placeholder="Indicação" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900" />
+                    <label className="flex items-center gap-3 text-sm text-slate-700"><input required type="checkbox" checked={formData.passenger_physical_fitness} onChange={(event) => setFormData((prev: any) => ({ ...prev, passenger_physical_fitness: event.target.checked }))} /> Declaro aptidão física para a viagem.*</label>
+                    <label className="flex items-start gap-3 text-sm text-slate-700"><input required type="checkbox" checked={formData.passenger_terms_accepted} onChange={(event) => setFormData((prev: any) => ({ ...prev, passenger_terms_accepted: event.target.checked }))} /><span>Declaro que aceito os termos do Aventure-se.* <Link href="/termos" target="_blank" className="text-blue-600 underline">Ler termo de compromisso</Link></span></label>
+                    {commitmentTerms && <div className="max-h-32 overflow-y-auto rounded-xl bg-slate-50 p-4 text-sm text-slate-700 whitespace-pre-wrap">{commitmentTerms}</div>}
                   </div>
                   
                   <div className="pt-6">
@@ -399,6 +445,16 @@ export default function CheckoutPage() {
                     <span className="font-medium">Cartão de Crédito</span>
                     <span className="text-xs mt-1 opacity-70">Até 12x</span>
                   </button>
+                </div>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Forma de pagamento*</label>
+                  <select required value={formData.payment_option} onChange={handleInputChange} name="payment_option" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900">
+                    <option value="pix_cash">PIX à vista com desconto</option>
+                    <option value="pix_5x">PIX parcelado em 5x</option>
+                    <option value="entry_installments">Entrada + parcelado</option>
+                    {Array.from({ length: 11 }, (_, index) => index + 2).map((installment) => <option key={installment} value={`installments_${installment}`}>Parcelado em {installment}x</option>)}
+                    <option value="other">Outro</option>
+                  </select>
                 </div>
                 
                 {/* PIX Tab */}

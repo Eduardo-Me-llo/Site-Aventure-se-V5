@@ -19,6 +19,7 @@ CREATE TABLE public.profiles (
   phone TEXT DEFAULT '',
   document TEXT DEFAULT '',  -- CPF ou RG
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'blocked')),
   avatar_url TEXT DEFAULT '',
   emergency_contact TEXT DEFAULT '',
   emergency_phone TEXT DEFAULT '',
@@ -50,6 +51,8 @@ CREATE TABLE public.trips (
   min_age INTEGER DEFAULT 18,
   meeting_point TEXT DEFAULT '',       -- Ponto de encontro
   meeting_time TEXT DEFAULT '',        -- Horário de embarque
+  CONSTRAINT trips_valid_dates CHECK (end_date >= start_date),
+  CONSTRAINT trips_valid_age CHECK (min_age >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -77,12 +80,15 @@ CREATE TABLE public.trip_accommodations (
   type TEXT NOT NULL CHECK (type IN ('camping', 'hostel', 'suite', 'pousada')),
   label TEXT NOT NULL DEFAULT '',      -- Ex: "Camping Aventure-se", "Suíte Master"
   description TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
   amenities TEXT[] DEFAULT '{}',       -- Ex: ["Ar-condicionado", "Frigobar", "Café da manhã"]
   price NUMERIC(10, 2) NOT NULL DEFAULT 0,
   capacity INTEGER NOT NULL DEFAULT 0,
   booked_count INTEGER NOT NULL DEFAULT 0,
   check_in TEXT DEFAULT '',
   check_out TEXT DEFAULT '',
+  CONSTRAINT accommodations_valid_capacity CHECK (capacity >= 0 AND booked_count >= 0 AND booked_count <= capacity),
+  CONSTRAINT accommodations_valid_price CHECK (price >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -100,6 +106,8 @@ CREATE TABLE public.trip_transport_options (
   price NUMERIC(10, 2) NOT NULL DEFAULT 0,
   capacity INTEGER NOT NULL DEFAULT 0,
   booked_count INTEGER NOT NULL DEFAULT 0,
+  CONSTRAINT transport_valid_capacity CHECK (capacity >= 0 AND booked_count >= 0 AND booked_count <= capacity),
+  CONSTRAINT transport_valid_price CHECK (price >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -117,6 +125,11 @@ CREATE TABLE public.coupons (
   current_uses INTEGER NOT NULL DEFAULT 0,
   expires_at TIMESTAMPTZ DEFAULT NULL,
   is_active BOOLEAN NOT NULL DEFAULT true,
+  CONSTRAINT coupons_valid_value CHECK (
+    discount_value >= 0 AND
+    (discount_type = 'fixed' OR discount_value <= 100)
+  ),
+  CONSTRAINT coupons_valid_usage CHECK (current_uses >= 0 AND (max_uses IS NULL OR max_uses >= 0)),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -138,8 +151,21 @@ CREATE TABLE public.bookings (
   passenger_name TEXT NOT NULL,
   passenger_document TEXT NOT NULL,
   passenger_phone TEXT NOT NULL,
+  passenger_rg TEXT NOT NULL DEFAULT '',
+  passenger_rg_issuer TEXT NOT NULL DEFAULT '',
+  passenger_birth_date DATE,
+  passenger_neighborhood TEXT NOT NULL DEFAULT '',
   passenger_emergency_contact TEXT DEFAULT '',
   passenger_emergency_phone TEXT DEFAULT '',
+  passenger_health_condition TEXT NOT NULL DEFAULT '',
+  passenger_medication TEXT DEFAULT '',
+  passenger_physical_fitness BOOLEAN NOT NULL DEFAULT false,
+  passenger_terms_accepted BOOLEAN NOT NULL DEFAULT false,
+  accommodation_companions TEXT DEFAULT '',
+  departure_location TEXT DEFAULT '',
+  departure_time_preference TEXT DEFAULT '',
+  residence_location TEXT DEFAULT '',
+  referral_source TEXT DEFAULT '',
   
   -- Valores
   accommodation_price NUMERIC(10, 2) NOT NULL DEFAULT 0,
@@ -149,12 +175,76 @@ CREATE TABLE public.bookings (
   
   -- Pagamento
   payment_method TEXT DEFAULT 'pix' CHECK (payment_method IN ('pix', 'credit_card')),
+  payment_option TEXT NOT NULL DEFAULT 'pix_cash',
   payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'confirmed', 'cancelled', 'refunded')),
   payment_installments INTEGER DEFAULT 1,
   payment_gateway_id TEXT DEFAULT '',  -- ID da transação no gateway
   
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE public.site_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+-- =====================================================
+-- 8. TABELAS OPERACIONAIS
+-- Atividades, pagamentos, histórico e auditoria
+-- =====================================================
+CREATE TABLE public.trip_activities (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  trip_id UUID NOT NULL REFERENCES public.trips(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  activity_date DATE,
+  start_time TIME,
+  end_time TIME,
+  location TEXT DEFAULT '',
+  capacity INTEGER,
+  price NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (price >= 0),
+  is_optional BOOLEAN NOT NULL DEFAULT false,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE public.booking_payments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  booking_id UUID NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  provider_payment_id TEXT UNIQUE,
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('pix', 'credit_card')),
+  amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 0),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'authorized', 'paid', 'failed', 'refunded')),
+  paid_at TIMESTAMPTZ,
+  raw_response JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE public.booking_status_history (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  booking_id UUID NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
+  from_status TEXT,
+  to_status TEXT NOT NULL CHECK (to_status IN ('pending', 'confirmed', 'cancelled', 'refunded')),
+  reason TEXT DEFAULT '',
+  changed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE public.audit_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  actor_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  table_name TEXT NOT NULL,
+  record_id UUID,
+  old_data JSONB,
+  new_data JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- =====================================================
@@ -169,6 +259,10 @@ CREATE INDEX idx_bookings_trip ON public.bookings(trip_id);
 CREATE INDEX idx_bookings_user ON public.bookings(user_id);
 CREATE INDEX idx_bookings_code ON public.bookings(booking_code);
 CREATE INDEX idx_coupons_code ON public.coupons(code);
+CREATE INDEX idx_trip_activities_trip ON public.trip_activities(trip_id, activity_date, sort_order);
+CREATE INDEX idx_booking_payments_booking ON public.booking_payments(booking_id);
+CREATE INDEX idx_booking_status_history_booking ON public.booking_status_history(booking_id, created_at);
+CREATE INDEX idx_audit_logs_record ON public.audit_logs(table_name, record_id, created_at);
 
 -- =====================================================
 -- ROW LEVEL SECURITY (RLS)
@@ -182,6 +276,11 @@ ALTER TABLE public.trip_accommodations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trip_transport_options ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.trip_activities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.booking_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.booking_status_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 
 -- Helper: Verifica se o usuário é admin
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -190,7 +289,7 @@ RETURNS BOOLEAN AS $$
     SELECT 1 FROM public.profiles
     WHERE user_id = auth.uid() AND role = 'admin'
   );
-$$ LANGUAGE sql SECURITY DEFINER;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
 -- ---- PROFILES ----
 -- Qualquer usuário autenticado pode ver seu próprio perfil
@@ -201,6 +300,10 @@ CREATE POLICY "Users can view own profile" ON public.profiles
 CREATE POLICY "Admins can view all profiles" ON public.profiles
   FOR SELECT USING (public.is_admin());
 
+CREATE POLICY "Admins can update all profiles" ON public.profiles
+  FOR UPDATE USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
 -- Usuários podem inserir seu próprio perfil
 CREATE POLICY "Users can insert own profile" ON public.profiles
   FOR INSERT WITH CHECK (auth.uid() = user_id AND role = 'user');
@@ -209,7 +312,7 @@ CREATE POLICY "Users can insert own profile" ON public.profiles
 CREATE POLICY "Users can update own profile" ON public.profiles
   FOR UPDATE
   USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id AND role = 'user');
+  WITH CHECK (auth.uid() = user_id AND role = 'user' AND status = 'active');
 
 -- ---- TRIPS ----
 -- Leitura pública de viagens ativas
@@ -218,7 +321,7 @@ CREATE POLICY "Public can view active trips" ON public.trips
 
 -- Admins podem fazer CRUD completo
 CREATE POLICY "Admins can manage trips" ON public.trips
-  FOR ALL USING (public.is_admin());
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- ---- TRIP IMAGES ----
 -- Leitura pública
@@ -227,7 +330,7 @@ CREATE POLICY "Public can view trip images" ON public.trip_images
 
 -- Admins podem gerenciar
 CREATE POLICY "Admins can manage trip images" ON public.trip_images
-  FOR ALL USING (public.is_admin());
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- ---- TRIP ACCOMMODATIONS ----
 -- Leitura pública
@@ -236,7 +339,7 @@ CREATE POLICY "Public can view accommodations" ON public.trip_accommodations
 
 -- Admins podem gerenciar
 CREATE POLICY "Admins can manage accommodations" ON public.trip_accommodations
-  FOR ALL USING (public.is_admin());
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- ---- TRIP TRANSPORT OPTIONS ----
 -- Leitura pública
@@ -245,7 +348,7 @@ CREATE POLICY "Public can view transport options" ON public.trip_transport_optio
 
 -- Admins podem gerenciar
 CREATE POLICY "Admins can manage transport options" ON public.trip_transport_options
-  FOR ALL USING (public.is_admin());
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- ---- COUPONS ----
 -- Leitura pública de cupons ativos (para validação no checkout)
@@ -254,7 +357,7 @@ CREATE POLICY "Public can view active coupons" ON public.coupons
 
 -- Admins podem fazer CRUD completo
 CREATE POLICY "Admins can manage coupons" ON public.coupons
-  FOR ALL USING (public.is_admin());
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- ---- BOOKINGS ----
 -- Usuários podem ver suas próprias reservas
@@ -265,13 +368,63 @@ CREATE POLICY "Users can view own bookings" ON public.bookings
 CREATE POLICY "Admins can view all bookings" ON public.bookings
   FOR SELECT USING (public.is_admin());
 
--- Usuários podem criar reservas para si
-CREATE POLICY "Users can create own bookings" ON public.bookings
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
 -- Admins podem atualizar qualquer reserva (status de pagamento, etc.)
 CREATE POLICY "Admins can update bookings" ON public.bookings
-  FOR UPDATE USING (public.is_admin());
+  FOR UPDATE USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- Reservas devem ser criadas por uma função transacional no servidor,
+-- que valida preço, cupom, disponibilidade e pagamento.
+
+-- ---- TRIP ACTIVITIES ----
+CREATE POLICY "Public can view trip activities" ON public.trip_activities
+  FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage trip activities" ON public.trip_activities
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- ---- BOOKING PAYMENTS ----
+CREATE POLICY "Users can view own booking payments" ON public.booking_payments
+  FOR SELECT USING (EXISTS (
+    SELECT 1 FROM public.bookings
+    WHERE bookings.id = booking_payments.booking_id AND bookings.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Admins can view booking payments" ON public.booking_payments
+  FOR SELECT USING (public.is_admin());
+
+CREATE POLICY "Admins can manage booking payments" ON public.booking_payments
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- ---- BOOKING STATUS HISTORY ----
+CREATE POLICY "Users can view own booking history" ON public.booking_status_history
+  FOR SELECT USING (EXISTS (
+    SELECT 1 FROM public.bookings
+    WHERE bookings.id = booking_status_history.booking_id AND bookings.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Admins can manage booking history" ON public.booking_status_history
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- ---- AUDIT LOGS ----
+CREATE POLICY "Admins can view audit logs" ON public.audit_logs
+  FOR SELECT USING (public.is_admin());
+
+CREATE POLICY "Admins can insert audit logs" ON public.audit_logs
+  FOR INSERT WITH CHECK (public.is_admin());
+
+CREATE POLICY "Public can view site settings" ON public.site_settings
+  FOR SELECT USING (key = 'commitment_terms');
+
+CREATE POLICY "Admins can manage site settings" ON public.site_settings
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+INSERT INTO public.site_settings (key, value)
+VALUES ('commitment_terms', 'Declaro que li e aceito o termo de compromisso do Aventure-se.')
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO public.site_settings (key, value)
+VALUES ('about_content', '{"heroTitle":"Viajar é encontrar novas versões de si.","heroDescription":"O Aventure-se nasceu para aproximar pessoas de paisagens extraordinárias e criar viagens em grupo com cuidado, liberdade e boas histórias para contar.","proposalTitle":"Uma viagem pode mudar a forma como você olha para o mundo.","proposalDescription":"Acreditamos que a melhor aventura não é só aquela com paisagens incríveis, mas também com tempo para respirar, conectar e sentir o lugar com profundidade.","impactValue":"15+","impactDescription":"destinos selecionados com foco em experiência e autenticidade.","experienceValue":"2k+","experienceDescription":"aventureiros que já viveram jornadas inspiradoras com a gente."}')
+ON CONFLICT (key) DO NOTHING;
 
 -- =====================================================
 -- TRIGGER: Atualiza updated_at automaticamente
@@ -294,6 +447,14 @@ CREATE TRIGGER set_trips_updated_at
 
 CREATE TRIGGER set_bookings_updated_at
   BEFORE UPDATE ON public.bookings
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_trip_activities_updated_at
+  BEFORE UPDATE ON public.trip_activities
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_booking_payments_updated_at
+  BEFORE UPDATE ON public.booking_payments
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- Cria automaticamente o perfil público de cada novo usuário do Supabase Auth.
@@ -374,7 +535,7 @@ INSERT INTO public.trips (
 -- Acomodações
 INSERT INTO public.trip_accommodations (id, trip_id, type, label, description, amenities, price, capacity, booked_count, check_in, check_out) VALUES
 (
-  'acc-camping-0001-0001-000000000001',
+  '11111111-1111-4111-8111-111111111001',
   'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   'camping',
   'Camping Aventure-se',
@@ -387,7 +548,7 @@ INSERT INTO public.trip_accommodations (id, trip_id, type, label, description, a
   NULL
 ),
 (
-  'acc-pousad-0001-0001-000000000002',
+  '11111111-1111-4111-8111-111111111002',
   'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   'hostel',
   'Pousada',
@@ -400,7 +561,7 @@ INSERT INTO public.trip_accommodations (id, trip_id, type, label, description, a
   '11:00'
 ),
 (
-  'acc-suite-0001-0001-000000000003',
+  '11111111-1111-4111-8111-111111111003',
   'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   'suite',
   'Suíte Master',
@@ -416,7 +577,7 @@ INSERT INTO public.trip_accommodations (id, trip_id, type, label, description, a
 -- Opções de transporte
 INSERT INTO public.trip_transport_options (id, trip_id, label, description, origin, has_transport, price, capacity, booked_count) VALUES
 (
-  'trp-comtransp-0001-000000000001',
+  '22222222-2222-4222-8222-222222222001',
   'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   'Transporte Ida e Volta (Rio de Janeiro)',
   'Ida e volta saindo do Rio de Janeiro, com chegada próxima às hospedagens para tornar toda a logística mais simples.',
@@ -427,7 +588,7 @@ INSERT INTO public.trip_transport_options (id, trip_id, label, description, orig
   28
 ),
 (
-  'trp-semtransp-0001-000000000002',
+  '22222222-2222-4222-8222-222222222002',
   'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   'Ir por conta própria',
   'Você irá por conta própria (carro, carona ou outro meio).',
@@ -441,7 +602,7 @@ INSERT INTO public.trip_transport_options (id, trip_id, label, description, orig
 -- Cupons de desconto (seed)
 INSERT INTO public.coupons (id, code, discount_type, discount_value, min_purchase, max_uses, current_uses, expires_at, is_active) VALUES
 (
-  'cpn-00001-0001-0001-000000000001',
+  '33333333-3333-4333-8333-333333333001',
   'REVEILLON10',
   'percentage',
   10.00,
@@ -452,7 +613,7 @@ INSERT INTO public.coupons (id, code, discount_type, discount_value, min_purchas
   true
 ),
 (
-  'cpn-00002-0001-0001-000000000002',
+  '33333333-3333-4333-8333-333333333002',
   'AVENTURA50',
   'fixed',
   50.00,
@@ -463,7 +624,7 @@ INSERT INTO public.coupons (id, code, discount_type, discount_value, min_purchas
   true
 ),
 (
-  'cpn-00003-0001-0001-000000000003',
+  '33333333-3333-4333-8333-333333333003',
   'PRIMEIRAVIAGEM',
   'percentage',
   15.00,
@@ -474,57 +635,5 @@ INSERT INTO public.coupons (id, code, discount_type, discount_value, min_purchas
   true
 );
 
--- Bookings de exemplo (demonstração)
-INSERT INTO public.bookings (
-  id, booking_code, trip_id, user_id, accommodation_id, transport_option_id,
-  transport_included, coupon_id, passenger_name, passenger_document, passenger_phone,
-  passenger_emergency_contact, passenger_emergency_phone,
-  accommodation_price, transport_price, discount_amount, total_amount,
-  payment_method, payment_status, payment_installments, created_at
-) VALUES
-(
-  'bkg-00001-0001-0001-000000000001',
-  'AVT-2026-00001',
-  'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-  'a1b2c3d4-e5f6-7890-abcd-ef1234567890', -- placeholder user_id
-  'acc-pousad-0001-0001-000000000002',
-  'trp-comtransp-0001-000000000001',
-  true,
-  'cpn-00001-0001-0001-000000000001',
-  'Maria da Silva',
-  '123.456.789-00',
-  '(21) 99999-1234',
-  'João da Silva',
-  '(21) 98888-4321',
-  1490.00,
-  280.00,
-  177.00,
-  1593.00,
-  'credit_card',
-  'confirmed',
-  3,
-  '2026-08-15T14:30:00Z'
-),
-(
-  'bkg-00002-0001-0001-000000000002',
-  'AVT-2026-00002',
-  'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-  'a1b2c3d4-e5f6-7890-abcd-ef1234567890', -- placeholder user_id
-  'acc-camping-0001-0001-000000000001',
-  'trp-semtransp-0001-000000000002',
-  false,
-  NULL,
-  'Pedro Santos',
-  '987.654.321-00',
-  '(11) 97777-5678',
-  'Ana Santos',
-  '(11) 96666-8765',
-  890.00,
-  0.00,
-  0.00,
-  890.00,
-  'pix',
-  'confirmed',
-  1,
-  '2026-08-16T10:15:00Z'
-);
+-- Reservas não são inseridas no seed: user_id referencia auth.users e precisa
+-- ser criado por um usuário real através do fluxo transacional da aplicação.

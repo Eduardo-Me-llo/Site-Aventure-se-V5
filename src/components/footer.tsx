@@ -18,13 +18,13 @@ export function Footer() {
               Transformando a maneira como você explora o mundo. Viagens de aventura premium para destinos inesquecíveis.
             </p>
             <div className="flex items-center gap-4 mt-2">
-              <a href="#" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
+              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
                 <Camera className="h-5 w-5" />
               </a>
-              <a href="#" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
+              <a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
                 <Video className="h-5 w-5" />
               </a>
-              <a href="#" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
+              <a href="https://wa.me/5521977167373" target="_blank" rel="noreferrer" aria-label="WhatsApp" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
                 <Share2 className="h-5 w-5" />
               </a>
             </div>

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Edit, Trash2, X, Save, Tag, Percent, DollarSign, Calendar, ToggleLeft, ToggleRight, ChevronLeft, Copy, Ticket } from 'lucide-react';
-import { getCoupons, saveCoupon, deleteCoupon } from '@/lib/store';
+import { Plus, Edit, Trash2, X, Save, Tag, Percent, DollarSign, Calendar, ToggleLeft, ToggleRight, ChevronLeft, Ticket, Search, Filter } from 'lucide-react';
+import { getAdminCoupons, saveAdminCoupon, deleteAdminCoupon } from '@/lib/supabase/admin-data';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Coupon } from '@/types';
 
@@ -12,16 +12,19 @@ export default function AdminCouponsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Partial<Coupon> | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'expired'>('all');
+  const [feedback, setFeedback] = useState('');
 
   useEffect(() => {
     loadCoupons();
   }, []);
 
-  const loadCoupons = () => {
+  const loadCoupons = async () => {
     try {
-      setCoupons(getCoupons());
-    } catch (e) {
-      console.error(e);
+      setCoupons(await getAdminCoupons());
+    } catch {
+      setFeedback('Não foi possível carregar os cupons. Confirme se sua conta é administradora e se as políticas do Supabase foram aplicadas.');
     } finally {
       setLoading(false);
     }
@@ -47,26 +50,56 @@ export default function AdminCouponsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este cupom?')) {
-      deleteCoupon(id);
-      loadCoupons();
+      try {
+        await deleteAdminCoupon(id);
+        setFeedback('Cupom excluído com sucesso.');
+        await loadCoupons();
+      } catch {
+        setFeedback('Não foi possível excluir o cupom.');
+      }
     }
   };
 
-  const handleToggleActive = (coupon: Coupon) => {
-    saveCoupon({ ...coupon, is_active: !coupon.is_active });
-    loadCoupons();
+  const handleToggleActive = async (coupon: Coupon) => {
+    try {
+      await saveAdminCoupon({ ...coupon, is_active: !coupon.is_active });
+      setFeedback(`Cupom ${coupon.is_active ? 'desativado' : 'ativado'} com sucesso.`);
+      await loadCoupons();
+    } catch {
+      setFeedback('Não foi possível alterar o status do cupom.');
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingCoupon && editingCoupon.code) {
-      saveCoupon(editingCoupon as Coupon);
-      setShowModal(false);
-      setEditingCoupon(null);
-      loadCoupons();
+      const value = Number(editingCoupon.discount_value);
+      if (!editingCoupon.code.trim() || !Number.isFinite(value) || value <= 0 || (editingCoupon.discount_type === 'percentage' && value > 100)) {
+        setFeedback('Informe um código e um desconto válido. Percentuais devem estar entre 0 e 100.');
+        return;
+      }
+      try {
+        await saveAdminCoupon({ ...editingCoupon, code: editingCoupon.code.trim().toUpperCase(), discount_value: value } as Coupon);
+        setShowModal(false);
+        setEditingCoupon(null);
+        setFeedback('Cupom salvo com sucesso.');
+        await loadCoupons();
+      } catch {
+        setFeedback('Não foi possível salvar. Verifique se o código já existe.');
+      }
     }
   };
+
+  const filteredCoupons = coupons.filter((coupon) => {
+    const queryMatches = coupon.code.toLowerCase().includes(searchQuery.toLowerCase());
+    const expired = coupon.expires_at ? new Date(coupon.expires_at) < new Date() : false;
+    const statusMatches = statusFilter === 'all' || (statusFilter === 'active' && coupon.is_active && !expired) || (statusFilter === 'inactive' && !coupon.is_active) || (statusFilter === 'expired' && expired);
+    return queryMatches && statusMatches;
+  });
+
+  const activeCount = coupons.filter((coupon) => coupon.is_active && (!coupon.expires_at || new Date(coupon.expires_at) >= new Date())).length;
+  const expiredCount = coupons.filter((coupon) => coupon.expires_at && new Date(coupon.expires_at) < new Date()).length;
 
   if (loading) {
     return (
@@ -103,9 +136,22 @@ export default function AdminCouponsPage() {
           </button>
         </header>
 
+        {feedback && <p role="status" className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">{feedback}</p>}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-neutral-300 bg-white p-5"><p className="text-sm text-slate-600">Total de cupons</p><p className="mt-1 text-3xl font-bold text-slate-900">{coupons.length}</p></div>
+          <div className="rounded-2xl border border-neutral-300 bg-white p-5"><p className="text-sm text-slate-600">Ativos</p><p className="mt-1 text-3xl font-bold text-blue-600">{activeCount}</p></div>
+          <div className="rounded-2xl border border-neutral-300 bg-white p-5"><p className="text-sm text-slate-600">Expirados</p><p className="mt-1 text-3xl font-bold text-red-500">{expiredCount}</p></div>
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-2xl border border-neutral-300 bg-white p-4 md:flex-row">
+          <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Buscar pelo código" className="w-full rounded-xl border border-neutral-300 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 outline-none focus:border-amber-500" /></div>
+          <div className="relative md:w-56"><Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)} className="w-full appearance-none rounded-xl border border-neutral-300 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 outline-none focus:border-amber-500"><option value="all">Todos os status</option><option value="active">Ativos</option><option value="inactive">Inativos</option><option value="expired">Expirados</option></select></div>
+        </div>
+
         {/* Coupons Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {coupons.map(coupon => {
+          {filteredCoupons.map(coupon => {
             const isExpired = coupon.expires_at ? new Date(coupon.expires_at) < new Date() : false;
             const isDepleted = coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses;
             const canUse = coupon.is_active && !isExpired && !isDepleted;
@@ -183,11 +229,11 @@ export default function AdminCouponsPage() {
             );
           })}
           
-          {coupons.length === 0 && (
+          {filteredCoupons.length === 0 && (
             <div className="col-span-full py-12 text-center bg-adventure-card/50 border border-neutral-300 border-dashed rounded-2xl">
               <Ticket className="w-12 h-12 text-neutral-700 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-slate-900 mb-1">Nenhum cupom criado</h3>
-              <p className="text-slate-700 text-sm">Crie seu primeiro cupom para oferecer descontos.</p>
+              <h3 className="text-lg font-medium text-slate-900 mb-1">Nenhum cupom encontrado</h3>
+              <p className="text-slate-700 text-sm">Ajuste os filtros ou crie um novo cupom.</p>
             </div>
           )}
         </div>

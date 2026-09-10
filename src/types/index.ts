@@ -113,6 +113,19 @@ export interface Booking {
   passenger_name: string;
   passenger_document: string;
   passenger_phone: string;
+  passenger_rg?: string;
+  passenger_rg_issuer?: string;
+  passenger_birth_date?: string;
+  passenger_neighborhood?: string;
+  passenger_health_condition?: string;
+  passenger_medication?: string;
+  passenger_physical_fitness?: boolean;
+  passenger_terms_accepted?: boolean;
+  accommodation_companions?: string;
+  departure_location?: string;
+  departure_time_preference?: string;
+  residence_location?: string;
+  referral_source?: string;
   passenger_emergency_contact: string;
   passenger_emergency_phone: string;
   accommodation_price: number;
@@ -122,6 +135,7 @@ export interface Booking {
   payment_method: 'pix' | 'credit_card';
   payment_status: 'pending' | 'confirmed' | 'cancelled' | 'refunded';
   payment_installments: number;
+  payment_option?: string;
   payment_gateway_id: string;
   created_at: string;
   updated_at: string;
@@ -137,6 +151,19 @@ export interface BookingFormData {
   passenger_name: string;
   passenger_document: string;
   passenger_phone: string;
+  passenger_rg: string;
+  passenger_rg_issuer: string;
+  passenger_birth_date: string;
+  passenger_neighborhood: string;
+  passenger_health_condition: string;
+  passenger_medication: string;
+  passenger_physical_fitness: boolean;
+  passenger_terms_accepted: boolean;
+  accommodation_companions: string;
+  departure_location: string;
+  departure_time_preference: string;
+  residence_location: string;
+  referral_source: string;
   passenger_emergency_contact: string;
   passenger_emergency_phone: string;
   accommodation_id: string;
@@ -144,6 +171,7 @@ export interface BookingFormData {
   coupon_code: string;
   payment_method: 'pix' | 'credit_card';
   payment_installments: number;
+  payment_option: string;
 }
 
 export interface CheckoutSummary {

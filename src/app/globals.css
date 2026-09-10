@@ -140,6 +140,16 @@ button.bg-amber-400,
   color: #0f172a !important; /* use dark slate for body text */
 }
 
+.bg-blue-600.text-white,
+.bg-blue-600.text-white * {
+  color: #ffffff !important;
+}
+
+.bg-gradient-to-r.text-white,
+.bg-gradient-to-r.text-white * {
+  color: #ffffff !important;
+}
+
 .border-neutral-800,
 .border-zinc-800,
 .border-neutral-900 {

@@ -21,13 +21,23 @@ export const getAuthenticatedUser = cache(async (): Promise<AuthenticatedUser | 
 
   if (claimsError || !claimsData || !userId) return null;
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profileWithStatus, error: profileError } = await supabase
     .from('profiles')
-    .select('full_name, role')
+    .select('full_name, role, status')
     .eq('user_id', userId)
     .maybeSingle();
 
-  if (profileError || !profile) return null;
+  let profile = profileWithStatus;
+  if (profileError) {
+    const fallback = await supabase
+      .from('profiles')
+      .select('full_name, role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (fallback.error || !fallback.data) return null;
+    profile = { ...fallback.data, status: 'active' };
+  }
+  if (!profile || profile.status === 'blocked') return null;
 
   return {
     id: userId,

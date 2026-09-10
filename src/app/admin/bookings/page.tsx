@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import Link from 'next/link';
 import { Search, Filter, Download, Printer, ChevronDown, ChevronUp, ChevronLeft, Check, X as XIcon, FileText, Users, Bus } from 'lucide-react';
-import { getBookings, getTrips, updateBookingStatus } from '@/lib/store';
+import { getAdminBookings, getAdminTrips, updateAdminBookingStatus } from '@/lib/supabase/admin-data';
 import { formatCurrency, formatDate, getPaymentStatusColor, getPaymentStatusLabel } from '@/lib/utils';
 import { Booking, Trip } from '@/types';
 
@@ -22,10 +22,11 @@ export default function AdminBookingsPage() {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     try {
-      setBookings(getBookings());
-      setTrips(getTrips());
+      const [bookingData, tripData] = await Promise.all([getAdminBookings(), getAdminTrips()]);
+      setBookings(bookingData);
+      setTrips(tripData);
     } catch (e) {
       console.error(e);
     } finally {
@@ -33,10 +34,10 @@ export default function AdminBookingsPage() {
     }
   };
 
-  const handleStatusChange = (bookingId: string, newStatus: 'pending' | 'confirmed' | 'cancelled') => {
+  const handleStatusChange = async (bookingId: string, newStatus: 'pending' | 'confirmed' | 'cancelled') => {
     try {
-      updateBookingStatus(bookingId, newStatus);
-      loadData();
+      await updateAdminBookingStatus(bookingId, newStatus);
+      await loadData();
     } catch (error) {
       console.error('Error updating status', error);
       alert('Erro ao atualizar status');

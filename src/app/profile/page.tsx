@@ -10,7 +10,7 @@ import { Booking, Trip } from '@/types';
 
 type ProfileAuthState = {
   isAuthenticated: boolean;
-  user: { id: string; email: string; full_name: string } | null;
+  user: { id: string; email: string; full_name: string; phone: string; document: string; emergency_contact: string; emergency_phone: string } | null;
 };
 
 export default function ProfilePage() {
@@ -19,6 +19,8 @@ export default function ProfilePage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [tripsCache, setTripsCache] = useState<Record<string, Trip>>({});
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [feedback, setFeedback] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -37,7 +39,7 @@ export default function ProfilePage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, phone, document, emergency_contact, emergency_phone')
         .eq('user_id', authUser.id)
         .maybeSingle();
 
@@ -47,6 +49,10 @@ export default function ProfilePage() {
           id: authUser.id,
           email: authUser.email ?? '',
           full_name: profile?.full_name || String(authUser.user_metadata.full_name || ''),
+          phone: profile?.phone || '',
+          document: profile?.document || '',
+          emergency_contact: profile?.emergency_contact || '',
+          emergency_phone: profile?.emergency_phone || '',
         },
       });
 
@@ -55,6 +61,11 @@ export default function ProfilePage() {
         .select('*')
         .order('created_at', { ascending: false });
       setBookings((userBookings ?? []) as Booking[]);
+      const tripIds = [...new Set((userBookings ?? []).map((booking) => booking.trip_id))];
+      if (tripIds.length > 0) {
+        const { data: tripData } = await supabase.from('trips').select('*').in('id', tripIds);
+        setTripsCache(Object.fromEntries((tripData ?? []).map((trip) => [trip.id, trip as Trip])));
+      }
       setLoading(false);
     };
 
@@ -67,6 +78,23 @@ export default function ProfilePage() {
     }
     router.replace('/');
     router.refresh();
+  };
+
+  const updateUserField = (field: 'full_name' | 'phone' | 'document' | 'emergency_contact' | 'emergency_phone', value: string) => {
+    setAuthState((current) => current.user ? { ...current, user: { ...current.user, [field]: value } } : current);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!authState.user) return;
+    const { error } = await createClient().from('profiles').update({
+      full_name: authState.user.full_name.trim(),
+      phone: authState.user.phone.trim(),
+      document: authState.user.document.trim(),
+      emergency_contact: authState.user.emergency_contact.trim(),
+      emergency_phone: authState.user.emergency_phone.trim(),
+    }).eq('user_id', authState.user.id);
+    setFeedback(error ? error.message : 'Dados atualizados com sucesso.');
+    if (!error) setIsEditing(false);
   };
 
   if (loading) {
@@ -121,7 +149,7 @@ export default function ProfilePage() {
               <span className="flex items-center gap-2"><Mail className="w-4 h-4" /> {user.email}</span>
             </div>
             <div className="flex flex-wrap justify-center sm:justify-start gap-3">
-              <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-neutral-300 hover:border-blue-500 hover:text-blue-400 transition-colors bg-adventure-card/50 font-medium">
+              <button type="button" onClick={() => setIsEditing((current) => !current)} className="flex items-center gap-2 px-5 py-2.5 rounded-lg border border-neutral-300 hover:border-blue-500 hover:text-blue-400 transition-colors bg-adventure-card/50 font-medium">
                 <Edit className="w-4 h-4" />
                 Editar Perfil
               </button>
@@ -183,7 +211,7 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                    <input type="text" defaultValue={user.full_name} className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                    <input type="text" value={user.full_name} onChange={(event) => updateUserField('full_name', event.target.value)} disabled={!isEditing} className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors disabled:opacity-60" />
                   </div>
                 </div>
                 
@@ -191,7 +219,7 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                    <input type="email" defaultValue={user.email} className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                    <input type="email" value={user.email} readOnly className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 opacity-60" />
                   </div>
                 </div>
 
@@ -199,7 +227,7 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Telefone</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                    <input type="tel" placeholder="(00) 00000-0000" className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                    <input type="tel" value={user.phone} onChange={(event) => updateUserField('phone', event.target.value)} disabled={!isEditing} placeholder="(00) 00000-0000" className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors disabled:opacity-60" />
                   </div>
                 </div>
 
@@ -207,7 +235,7 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">CPF</label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                    <input type="text" placeholder="000.000.000-00" className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                    <input type="text" value={user.document} onChange={(event) => updateUserField('document', event.target.value)} disabled={!isEditing} placeholder="000.000.000-00" className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 pl-10 pr-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors disabled:opacity-60" />
                   </div>
                 </div>
                 
@@ -218,13 +246,14 @@ export default function ProfilePage() {
                     <Heart className="w-4 h-4 text-rose-500" />
                     Contato de Emergência
                   </label>
-                  <input type="text" placeholder="Nome do contato" className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 px-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors mb-3" />
-                  <input type="tel" placeholder="Telefone do contato" className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 px-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                  <input type="text" value={user.emergency_contact} onChange={(event) => updateUserField('emergency_contact', event.target.value)} disabled={!isEditing} placeholder="Nome do contato" className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 px-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors mb-3 disabled:opacity-60" />
+                  <input type="tel" value={user.emergency_phone} onChange={(event) => updateUserField('emergency_phone', event.target.value)} disabled={!isEditing} placeholder="Telefone do contato" className="w-full bg-adventure-card border border-neutral-300 rounded-lg py-2.5 px-4 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors disabled:opacity-60" />
                 </div>
 
-                <button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-lg transition-colors mt-6">
+                <button type="button" onClick={handleSaveProfile} disabled={!isEditing} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-lg transition-colors mt-6 disabled:opacity-50">
                   Salvar Alterações
                 </button>
+                {feedback && <p role="status" className="mt-3 text-sm text-blue-500">{feedback}</p>}
               </div>
             </div>
           </div>
@@ -247,7 +276,7 @@ export default function ProfilePage() {
                     Você ainda não tem nenhuma aventura reservada. Que tal explorar nossos destinos incríveis?
                   </p>
                   <Link 
-                    href="/destinations"
+                    href="/#trips-section"
                     className="bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 px-6 rounded-lg transition-colors inline-flex items-center gap-2"
                   >
                     Explorar Destinos

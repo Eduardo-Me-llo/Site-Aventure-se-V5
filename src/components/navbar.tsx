@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, User, LogIn } from 'lucide-react';
+import { Menu, X, User, LogIn, LogOut, Shield } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,6 +22,40 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    const supabase = createClient();
+    const loadUser = async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) {
+        setUserName('');
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, role')
+        .eq('user_id', authData.user.id)
+        .maybeSingle();
+
+      setUserName(profile?.full_name || authData.user.user_metadata.full_name || authData.user.email || 'Aventureiro');
+      setIsAdmin(profile?.role === 'admin');
+    };
+
+    void loadUser();
+    const { data: listener } = supabase.auth.onAuthStateChange(() => void loadUser());
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await createClient().auth.signOut();
+    setUserName('');
+    setIsAdmin(false);
+    setIsMobileMenuOpen(false);
+  };
 
   if (pathname.startsWith('/admin')) return null;
 
@@ -46,13 +83,15 @@ export default function Navbar() {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-4">
-          <Link
-            href="/auth/login"
-            className="flex items-center gap-2 text-slate-900 hover:text-blue-500 transition-colors text-sm font-medium px-4 py-2 rounded-lg hover:bg-adventure-card/40"
-          >
-            <LogIn className="w-4 h-4" />
-            Entrar
-          </Link>
+          {userName ? (
+            <div className="flex items-center gap-3">
+              {isAdmin && <Link href="/admin" className="flex items-center gap-1 text-blue-600 text-sm font-medium"><Shield className="w-4 h-4" /> Admin</Link>}
+              <Link href="/profile" className="flex items-center gap-2 text-slate-900 hover:text-blue-500 transition-colors text-sm font-medium"><User className="w-4 h-4" /> {userName}</Link>
+              <button type="button" onClick={handleLogout} className="flex items-center gap-2 text-slate-700 hover:text-red-500 transition-colors text-sm font-medium" title="Sair"><LogOut className="w-4 h-4" /> Sair</button>
+            </div>
+          ) : (
+            <Link href="/auth/login" className="flex items-center gap-2 text-slate-900 hover:text-blue-500 transition-colors text-sm font-medium px-4 py-2 rounded-lg hover:bg-adventure-card/40"><LogIn className="w-4 h-4" /> Entrar</Link>
+          )}
           <Link
             href="#reservar"
             className="px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 text-white font-medium text-sm hover:shadow-[0_0_20px_rgba(15,131,247,0.25)] transition-all transform hover:-translate-y-0.5"
@@ -94,14 +133,15 @@ export default function Navbar() {
           </Link>
           
           <div className="flex flex-col gap-3 mt-2">
-            <Link
-              href="/auth/login"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-neutral-300/10 text-slate-900"
-            >
-              <User className="w-4 h-4" />
-              Entrar
-            </Link>
+            {userName ? (
+              <>
+                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-neutral-300/10 text-slate-900"><User className="w-4 h-4" /> {userName}</Link>
+                {isAdmin && <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-neutral-300/10 text-blue-600"><Shield className="w-4 h-4" /> Administração</Link>}
+                <button type="button" onClick={handleLogout} className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-neutral-300/10 text-slate-900"><LogOut className="w-4 h-4" /> Sair</button>
+              </>
+            ) : (
+              <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-neutral-300/10 text-slate-900"><User className="w-4 h-4" /> Entrar</Link>
+            )}
             <Link
               href="#reservar"
               onClick={() => setIsMobileMenuOpen(false)}

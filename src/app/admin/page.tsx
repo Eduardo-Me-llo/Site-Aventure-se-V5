@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { DollarSign, Users, Clock, BarChart3, TrendingUp, Package, Ticket, ArrowRight, LogOut, Settings, Home, Image, Save, Ban, UserCheck } from 'lucide-react';
-import { getDashboardMetrics, getActiveTrips, getBookings, getTrips, getRegisteredUsers, saveTrip, updateRegisteredUserStatus, getHomeImage, saveHomeImage, RegisteredUser } from '@/lib/store';
+import { DollarSign, Users, Clock, BarChart3, TrendingUp, Package, Ticket, ArrowRight, LogOut, Settings, Home, Image, Save, Ban, UserCheck, FileText } from 'lucide-react';
+import { getAdminBookings, getAdminTrips, getAdminUsers, saveAdminTrip, updateAdminUserStatus, getCommitmentTerms, saveCommitmentTerms, getAboutContent, saveAboutContent, defaultAboutContent, type AboutContent, type AdminUser } from '@/lib/supabase/admin-data';
+import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, getPaymentStatusColor, getPaymentStatusLabel } from '@/lib/utils';
-import { Booking } from '@/types';
+import { Booking, Trip } from '@/types';
+import { getHomeImage, saveHomeImage } from '@/lib/store';
 
 export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState({
@@ -16,33 +18,76 @@ export default function AdminDashboardPage() {
     revenueByAccommodation: [] as { type: string; revenue: number; count: number }[],
   });
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
-  const [mediaTrips, setMediaTrips] = useState(getTrips());
-  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
+  const [mediaTrips, setMediaTrips] = useState<Trip[]>([]);
+  const [registeredUsers, setRegisteredUsers] = useState<AdminUser[]>([]);
   const [homeImage, setHomeImage] = useState('');
+  const [adminName, setAdminName] = useState('Administrador');
+  const [commitmentTerms, setCommitmentTerms] = useState('');
+  const [termsFeedback, setTermsFeedback] = useState('');
+  const [aboutContent, setAboutContent] = useState<AboutContent>(defaultAboutContent);
+  const [aboutFeedback, setAboutFeedback] = useState('');
+  const [dashboardFeedback, setDashboardFeedback] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const data = getDashboardMetrics();
+    const loadDashboard = async () => {
+      try {
+      const results = await Promise.allSettled([getAdminBookings(), getAdminTrips(), getAdminUsers(), getCommitmentTerms(), getAboutContent()]);
+      const [bookingsResult, tripsResult, usersResult, termsResult, aboutResult] = results;
+      const allBookings = bookingsResult.status === 'fulfilled' ? bookingsResult.value : [];
+      const trips = tripsResult.status === 'fulfilled' ? tripsResult.value : [];
+      const users = usersResult.status === 'fulfilled' ? usersResult.value : [];
+      const terms = termsResult.status === 'fulfilled' ? termsResult.value : '';
+      const about = aboutResult.status === 'fulfilled' ? aboutResult.value : defaultAboutContent;
+      const failedSections = results.filter((result) => result.status === 'rejected').length;
+      if (failedSections > 0) setDashboardFeedback('Alguns dados não puderam ser carregados. Execute as migrações do Supabase e tente atualizar a página.');
+      const confirmed = allBookings.filter((booking) => booking.payment_status === 'confirmed');
+      const pending = allBookings.filter((booking) => booking.payment_status === 'pending');
+      const capacity = trips.flatMap((trip) => trip.accommodations ?? []).reduce((sum, accommodation) => sum + accommodation.capacity, 0);
+      const occupied = trips.flatMap((trip) => trip.accommodations ?? []).reduce((sum, accommodation) => sum + accommodation.booked_count, 0);
+      const revenueByAccommodation = trips.flatMap((trip) => trip.accommodations ?? []).map((accommodation) => ({ type: accommodation.label, revenue: accommodation.price * accommodation.booked_count, count: accommodation.booked_count }));
       setMetrics({
-        totalRevenue: data.totalRevenue || 0,
-        confirmedBookings: data.confirmedBookings || 0,
-        pendingBookings: data.pendingBookings || 0,
-        occupancyRate: data.occupancyRate || 0,
-        revenueByAccommodation: data.revenueByAccommodation || [],
+        totalRevenue: confirmed.reduce((sum, booking) => sum + booking.total_amount, 0),
+        confirmedBookings: confirmed.length,
+        pendingBookings: pending.length,
+        occupancyRate: capacity > 0 ? Math.round((occupied / capacity) * 100) : 0,
+        revenueByAccommodation,
       });
-      
-      const allBookings = getBookings();
       setRecentBookings(allBookings.slice(0, 5));
-      setMediaTrips(getTrips());
-      setRegisteredUsers(getRegisteredUsers());
+      setMediaTrips(trips);
+      setRegisteredUsers(users);
+      setCommitmentTerms(terms);
+      setAboutContent(about);
       setHomeImage(getHomeImage());
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+      const { data: authData } = await createClient().auth.getUser();
+      setAdminName(authData.user?.user_metadata.full_name || authData.user?.email || 'Administrador');
+      } catch {
+        setDashboardFeedback('Não foi possível carregar o painel. Verifique sua sessão e a configuração do Supabase.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadDashboard();
   }, []);
+
+  const handleSaveCommitmentTerms = async () => {
+    try {
+      await saveCommitmentTerms(commitmentTerms);
+      setTermsFeedback('Termo oficial atualizado.');
+    } catch (error) {
+      console.error(error);
+      setTermsFeedback('Não foi possível salvar o termo.');
+    }
+  };
+
+  const handleSaveAboutContent = async () => {
+    try {
+      await saveAboutContent(aboutContent);
+      setAboutFeedback('Conteúdo da página Sobre nós atualizado.');
+    } catch {
+      setAboutFeedback('Não foi possível salvar o conteúdo.');
+    }
+  };
 
   if (loading) {
     return (
@@ -56,13 +101,13 @@ export default function AdminDashboardPage() {
     const trip = mediaTrips.find(item => item.id === tripId);
     if (!trip) return;
     const updatedTrip = { ...trip, cover_image: coverImage };
-    saveTrip(updatedTrip);
+    void saveAdminTrip(updatedTrip);
     setMediaTrips(current => current.map(item => item.id === tripId ? updatedTrip : item));
   };
 
-  const handleUserStatus = (user: RegisteredUser) => {
+  const handleUserStatus = async (user: AdminUser) => {
     const status = user.status === 'active' ? 'blocked' : 'active';
-    updateRegisteredUserStatus(user.id, status);
+    await updateAdminUserStatus(user.id, status);
     setRegisteredUsers(current => current.map(item => item.id === user.id ? { ...item, status } : item));
   };
 
@@ -78,6 +123,7 @@ export default function AdminDashboardPage() {
               Painel Administrativo
             </h1>
             <p className="text-slate-700 mt-1">Bem-vindo ao sistema de gestão do Aventure-se.</p>
+            {dashboardFeedback && <p role="status" className="mt-2 text-sm text-amber-600">{dashboardFeedback}</p>}
           </div>
           <div className="flex items-center gap-4">
             <Link href="/" className="p-2 text-slate-700 hover:text-blue-500 hover:bg-blue-400/10 rounded-full transition-colors" title="Início">
@@ -87,9 +133,9 @@ export default function AdminDashboardPage() {
               <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
                 AD
               </div>
-              <span className="text-sm font-medium">Admin User</span>
+              <span className="text-sm font-medium">{adminName}</span>
             </div>
-            <button className="p-2 text-neutral-400 hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors" title="Sair">
+            <button onClick={async () => { await createClient().auth.signOut(); window.location.href = '/'; }} className="p-2 text-neutral-400 hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors" title="Sair">
               <LogOut className="w-5 h-5" />
             </button>
           </div>
@@ -315,6 +361,16 @@ export default function AdminDashboardPage() {
           </section>
 
           <section className="bg-adventure-card/50 border border-neutral-300 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-slate-900">Editar Sobre nós</h2>
+            <p className="mt-1 text-sm text-slate-700">Atualize os textos exibidos na página institucional.</p>
+            <div className="mt-5 space-y-3">
+              {([['heroTitle', 'Título principal'], ['heroDescription', 'Descrição inicial'], ['proposalTitle', 'Título da proposta'], ['proposalDescription', 'Descrição da proposta'], ['impactValue', 'Valor de impacto'], ['impactDescription', 'Descrição de impacto'], ['experienceValue', 'Valor de experiência'], ['experienceDescription', 'Descrição de experiência']] as const).map(([field, label]) => <label key={field} className="block text-sm font-medium text-slate-700">{label}<textarea rows={field.includes('Description') ? 3 : 1} value={aboutContent[field]} onChange={(event) => setAboutContent((current) => ({ ...current, [field]: event.target.value }))} className="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none" /></label>)}
+            </div>
+            <button type="button" onClick={() => void handleSaveAboutContent()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"><Save className="h-4 w-4" /> Salvar Sobre nós</button>
+            {aboutFeedback && <p role="status" className="mt-3 text-sm text-blue-600">{aboutFeedback}</p>}
+          </section>
+
+          <section className="bg-adventure-card/50 border border-neutral-300 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2"><Users className="w-5 h-5 text-blue-500" /> Contas cadastradas</h2>
@@ -337,6 +393,14 @@ export default function AdminDashboardPage() {
                 </table>
               </div>
             ) : <p className="text-sm text-slate-600 py-10 text-center">Nenhuma conta cadastrada ainda.</p>}
+          </section>
+
+          <section className="bg-adventure-card/50 border border-neutral-300 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2"><FileText className="w-5 h-5 text-blue-500" /> Termo de compromisso</h2>
+            <p className="text-sm text-slate-700 mt-1">Este texto será exibido no checkout e aceito pelos clientes.</p>
+            <textarea value={commitmentTerms} onChange={(event) => setCommitmentTerms(event.target.value)} rows={10} className="mt-5 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none" />
+            <button type="button" onClick={() => void handleSaveCommitmentTerms()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"><Save className="h-4 w-4" /> Salvar termo oficial</button>
+            {termsFeedback && <p role="status" className="mt-3 text-sm text-blue-600">{termsFeedback}</p>}
           </section>
         </div>
 

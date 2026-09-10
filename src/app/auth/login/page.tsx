@@ -105,9 +105,6 @@ export default function LoginPage() {
 
           {feedback && <p role="status" className="mt-4 text-center text-sm text-blue-300">{feedback}</p>}
 
-          <div className="mt-6 relative"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-neutral-300" /></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-adventure-card text-slate-700">ou</span></div></div>
-
-          <button type="button" disabled className="mt-6 w-full flex items-center justify-center gap-3 py-3 px-4 border border-neutral-300 rounded-xl bg-transparent text-slate-500 font-medium cursor-not-allowed opacity-70" title="Login social será habilitado com o Supabase">Entrar com Google (em breve)</button>
         </div>
 
         <div className="mt-8 text-center space-y-4">

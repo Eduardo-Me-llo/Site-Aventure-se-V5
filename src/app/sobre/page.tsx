@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Compass, Heart, Mountain, Shield, Users, Sparkles, MapPinned, Route } from 'lucide-react';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import { defaultAboutContent, type AboutContent } from '@/lib/supabase/admin-data';
 
 const team = [
   {
@@ -40,6 +42,15 @@ const journeySteps = [
 export default function AboutPage() {
   const [activeMember, setActiveMember] = useState(0);
   const member = team[activeMember];
+  const [content, setContent] = useState<AboutContent>(defaultAboutContent);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    void createClient().from('site_settings').select('value').eq('key', 'about_content').maybeSingle().then(({ data }) => {
+      if (!data?.value) return;
+      try { setContent({ ...defaultAboutContent, ...JSON.parse(data.value) }); } catch { /* keep defaults */ }
+    });
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#f7f3e9] text-black pt-20 sm:pt-24">
@@ -50,10 +61,10 @@ export default function AboutPage() {
               <Mountain className="w-4 h-4" /> Nossa história
             </span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-black mt-5 sm:mt-6 mb-5 sm:mb-6">
-              Viajar é encontrar novas versões de si.
+              {content.heroTitle}
             </h1>
             <p className="text-base sm:text-xl leading-relaxed text-black max-w-xl">
-              O Aventure-se nasceu para aproximar pessoas de paisagens extraordinárias e criar viagens em grupo com cuidado, liberdade e boas histórias para contar.
+              {content.heroDescription}
             </p>
             <div className="flex flex-wrap gap-4 mt-8">
               <Link href="/#trips-section" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-colors">
@@ -90,9 +101,9 @@ export default function AboutPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold">
               <Sparkles className="w-4 h-4" /> Nossa proposta
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-black">Uma viagem pode mudar a forma como você olha para o mundo.</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-black">{content.proposalTitle}</h2>
             <p className="text-black leading-relaxed">
-              Acreditamos que a melhor aventura não é só aquela com paisagens incríveis, mas também com tempo para respirar, conectar e sentir o lugar com profundidade.
+              {content.proposalDescription}
             </p>
             <div className="space-y-4 mt-8">
               {journeySteps.map((step, index) => (
@@ -111,14 +122,14 @@ export default function AboutPage() {
               <div className="p-6 sm:p-8 border-b md:border-b-0 md:border-r border-slate-200">
                 <MapPinned className="w-8 h-8 text-blue-500 mb-4" />
                 <p className="text-sm uppercase tracking-wide text-blue-500 font-semibold">Impacto</p>
-                <p className="text-4xl font-bold mt-3 text-black">15+</p>
-                <p className="mt-2 text-black">destinos selecionados com foco em experiência e autenticidade.</p>
+                <p className="text-4xl font-bold mt-3 text-black">{content.impactValue}</p>
+                <p className="mt-2 text-black">{content.impactDescription}</p>
               </div>
               <div className="p-6 sm:p-8">
                 <Route className="w-8 h-8 text-blue-500 mb-4" />
                 <p className="text-sm uppercase tracking-wide text-blue-500 font-semibold">Experiência</p>
-                <p className="text-4xl font-bold mt-3 text-black">2k+</p>
-                <p className="mt-2 text-black">aventureiros que já viveram jornadas inspiradoras com a gente.</p>
+                <p className="text-4xl font-bold mt-3 text-black">{content.experienceValue}</p>
+                <p className="mt-2 text-black">{content.experienceDescription}</p>
               </div>
             </div>
             <div className="p-6 sm:p-8 border-t border-slate-200 bg-slate-50">

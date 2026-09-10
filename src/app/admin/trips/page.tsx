@@ -3,23 +3,24 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Edit, Trash2, X, Save, MapPin, Calendar, ChevronLeft, Eye, EyeOff, MoreVertical } from 'lucide-react';
-import { getTrips, saveTrip, deleteTrip } from '@/lib/store';
+import { getAdminTrips, saveAdminTrip, deleteAdminTrip, uploadTripImage } from '@/lib/supabase/admin-data';
 import { formatCurrency, formatDateRange, getRemainingSpots } from '@/lib/utils';
-import { Trip, TripAccommodation, TripTransportOption } from '@/types';
+import { Trip, TripAccommodation, TripTransportOption, TripImage } from '@/types';
 
 export default function AdminTripsPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Partial<Trip> | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     loadTrips();
   }, []);
 
-  const loadTrips = () => {
+  const loadTrips = async () => {
     try {
-      const data = getTrips();
+      const data = await getAdminTrips();
       setTrips(data);
     } catch (e) {
       console.error(e);
@@ -56,23 +57,60 @@ export default function AdminTripsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta viagem?')) {
-      deleteTrip(id);
-      loadTrips();
+      await deleteAdminTrip(id);
+      await loadTrips();
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingTrip) {
       if (!editingTrip.title?.trim() || !editingTrip.slug?.trim() || !editingTrip.destination?.trim()) {
         alert('Preencha título, slug e destino antes de salvar.');
         return;
       }
-      saveTrip(editingTrip as Trip);
+      await saveAdminTrip(editingTrip as Trip);
       setShowModal(false);
       setEditingTrip(null);
-      loadTrips();
+      await loadTrips();
+    }
+  };
+
+  const handleTripImageUpload = async (file: File, accommodationIndex?: number) => {
+    if (!editingTrip) return;
+    setUploadingImage(true);
+    try {
+      const url = await uploadTripImage(file, editingTrip.id || 'new-trip');
+      if (typeof accommodationIndex === 'number') {
+        updateAccommodation(accommodationIndex, { image_url: url });
+      } else {
+        setEditingTrip({ ...editingTrip, cover_image: url });
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Não foi possível enviar a imagem. Verifique o bucket trip-images e as permissões de administrador.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleGalleryImageUpload = async (file: File) => {
+    if (!editingTrip) return;
+    setUploadingImage(true);
+    try {
+      const url = await uploadTripImage(file, `${editingTrip.id || 'new-trip'}/gallery`);
+      const images = [...(editingTrip.images || []), {
+        id: crypto.randomUUID(), trip_id: editingTrip.id || '', image_url: url,
+        alt_text: editingTrip.title || 'Imagem da viagem', order_index: (editingTrip.images || []).length,
+        created_at: new Date().toISOString(),
+      } satisfies TripImage];
+      setEditingTrip({ ...editingTrip, images });
+    } catch (error) {
+      console.error(error);
+      alert('Não foi possível enviar a imagem da galeria.');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -236,27 +274,30 @@ export default function AdminTripsPage() {
 
       {/* Edit Modal */}
       {showModal && editingTrip && (
-        <div className="fixed inset-0 z-50 bg-neutral-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-4xl shadow-2xl my-8">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-800 sticky top-0 bg-neutral-900 z-10 rounded-t-2xl">
-              <h2 className="text-xl font-bold text-white">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-3 sm:p-6">
+          <div className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-7">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
                 {editingTrip.id && trips.some(t => t.id === editingTrip.id) ? 'Editar Viagem' : 'Nova Viagem'}
-              </h2>
-              <button onClick={() => setShowModal(false)} className="text-neutral-400 hover:text-white transition-colors">
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">Configure os dados publicados, preços, imagens e logística.</p>
+              </div>
+              <button type="button" onClick={() => setShowModal(false)} aria-label="Fechar edição" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-4 space-y-6 sm:p-7">
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-neutral-300">Título</label>
+                  <label className="text-sm font-semibold text-slate-700">Título</label>
                   <input 
                     type="text" 
                     value={editingTrip.title || ''} 
                     onChange={e => setEditingTrip({...editingTrip, title: e.target.value})}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -349,6 +390,16 @@ export default function AdminTripsPage() {
                     Mostrar em destaque
                   </label>
                 </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-sm font-medium text-neutral-300">Imagem de capa do aparelho</label>
+                  <input type="file" accept="image/png,image/jpeg,image/webp" disabled={uploadingImage} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleTripImageUpload(file); }} className="block w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-sm text-neutral-300 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-500 file:px-3 file:py-2 file:font-medium file:text-neutral-950" />
+                  {uploadingImage && <p className="text-xs text-blue-400">Enviando imagem...</p>}
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-sm font-medium text-neutral-300">Galeria da viagem</label>
+                  <input type="file" accept="image/png,image/jpeg,image/webp" disabled={uploadingImage} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleGalleryImageUpload(file); }} className="block w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2.5 text-sm text-neutral-300 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-500 file:px-3 file:py-2 file:font-medium file:text-neutral-950" />
+                  {(editingTrip.images || []).length > 0 && <div className="grid grid-cols-3 gap-2">{(editingTrip.images || []).map((image) => <img key={image.id} src={image.image_url} alt={image.alt_text} className="h-20 w-full rounded-lg object-cover" />)}</div>}
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -373,6 +424,9 @@ export default function AdminTripsPage() {
                   <div key={accommodation.id} className="grid grid-cols-1 gap-3 rounded-xl bg-neutral-950 p-3 sm:grid-cols-4">
                     <input value={accommodation.label} onChange={e => updateAccommodation(index, { label: e.target.value })} placeholder="Nome" className="sm:col-span-2 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white" />
                     <input value={accommodation.image_url || ''} onChange={e => updateAccommodation(index, { image_url: e.target.value })} placeholder="URL da imagem" className="sm:col-span-4 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white" />
+                    <label className="sm:col-span-4 text-xs text-neutral-400">Imagem do aparelho
+                      <input type="file" accept="image/png,image/jpeg,image/webp" disabled={uploadingImage} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleTripImageUpload(file, index); }} className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-neutral-300 file:mr-3 file:rounded file:border-0 file:bg-blue-500 file:px-2 file:py-1 file:font-medium file:text-neutral-950" />
+                    </label>
                     <input type="number" min="0" step="0.01" value={accommodation.price} onChange={e => updateAccommodation(index, { price: Number(e.target.value) })} placeholder="Preço" className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white" />
                     <div className="flex gap-2">
                       <input type="number" min="0" value={accommodation.capacity} onChange={e => updateAccommodation(index, { capacity: Number(e.target.value) })} placeholder="Vagas" className="min-w-0 flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white" />

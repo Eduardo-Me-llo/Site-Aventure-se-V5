@@ -93,12 +93,17 @@ export default function SuccessPage() {
             
             <div className="flex flex-col sm:flex-row gap-4 mt-8 print:hidden">
               <a 
-                href="#"
+                href="https://wa.me/5521977167373"
+                target="_blank"
+                rel="noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-colors shadow-lg shadow-blue-900/20 group"
               >
                 <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 Entrar no Grupo WhatsApp
               </a>
+              <Link href="/termos" target="_blank" className="flex-1 flex items-center justify-center gap-2 py-3 px-4 border border-blue-500 text-blue-600 rounded-xl font-medium transition-colors hover:bg-blue-50">
+                Ler termo de compromisso
+              </Link>
               <button 
                 onClick={handlePrint}
                 className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-transparent border border-neutral-300 hover:border-blue-500 hover:bg-adventure-card text-slate-700 rounded-xl font-medium transition-all"
@@ -134,11 +139,11 @@ export default function SuccessPage() {
               <div className="bg-adventure-card/60 backdrop-blur-md border border-neutral-300 rounded-2xl p-6">
                 <h3 className="text-lg font-semibold mb-4 text-slate-900">Dúvidas? Fale conosco</h3>
                 <div className="space-y-3">
-                  <a href="#" className="flex items-center gap-3 text-slate-700 hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-adventure-card/70">
+                  <a href="https://wa.me/5521977167373" className="flex items-center gap-3 text-slate-700 hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-adventure-card/70">
                     <MessageCircle className="w-5 h-5" />
                     <span>(11) 99999-9999</span>
                   </a>
-                  <a href="#" className="flex items-center gap-3 text-slate-700 hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-adventure-card/70">
+                  <a href="mailto:contato@aventure-se.com.br" className="flex items-center gap-3 text-slate-700 hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-adventure-card/70">
                     <Mail className="w-5 h-5" />
                     <span>suporte@aventurese.com.br</span>
                   </a>

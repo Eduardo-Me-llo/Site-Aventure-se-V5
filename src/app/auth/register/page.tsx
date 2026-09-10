@@ -291,7 +291,7 @@ export default function RegisterPage() {
                 className="mt-1 h-4 w-4 rounded border-neutral-300 bg-adventure-card text-blue-500 focus:ring-blue-500/50 focus:ring-offset-adventure-dark"
               />
               <label htmlFor="terms" className="ml-3 block text-sm text-slate-700">
-                Aceito os <a href="#" className="text-blue-400 hover:underline">termos de uso</a> e <a href="#" className="text-blue-400 hover:underline">política de privacidade</a>
+                Aceito os <Link href="/termos" className="text-blue-400 hover:underline">termos de uso</Link> e <Link href="/privacidade" className="text-blue-400 hover:underline">política de privacidade</Link>
               </label>
             </div>
             {errors.terms && <p className="text-sm text-red-600">{errors.terms}</p>}
