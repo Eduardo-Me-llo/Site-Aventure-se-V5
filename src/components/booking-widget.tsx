@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Trip } from '@/types';
 import { formatCurrency, getRemainingSpots, getScarcityBadge, getAccommodationIcon } from '@/lib/utils';
 import { Shield, CreditCard, Zap } from 'lucide-react';
 import { getPackagePrice, TRANSPORT_PRICE } from '@/lib/pricing';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 
 interface BookingWidgetProps {
   trip: Trip;
@@ -15,6 +16,7 @@ interface BookingWidgetProps {
 export function BookingWidget({ trip, initialAccommodationId }: BookingWidgetProps) {
   const [selectedAccId, setSelectedAccId] = useState<string>(initialAccommodationId || '');
   const [selectedTrpId, setSelectedTrpId] = useState<string>('transport'); // 'transport' or 'none'
+  const router = useRouter();
 
   useEffect(() => {
     if (initialAccommodationId && trip.accommodations?.some(accommodation => accommodation.id === initialAccommodationId)) {
@@ -35,6 +37,21 @@ export function BookingWidget({ trip, initialAccommodationId }: BookingWidgetPro
   const installmentPrice = totalPrice / 12;
 
   const isSoldOut = !trip.accommodations || trip.accommodations.every(a => (a.capacity - a.booked_count) <= 0);
+  const checkoutPath = !selectedAccId || isSoldOut ? '' : `/checkout/${trip.id}?acc=${selectedAccId}&trp=${selectedTrpId === 'transport' ? firstTransport?.id || 'trp-with' : 'trp-without'}`;
+
+  const handleGuaranteeSpot = async () => {
+    if (!checkoutPath) return;
+    if (!isSupabaseConfigured) {
+      router.push(checkoutPath);
+      return;
+    }
+    const { data } = await createClient().auth.getUser();
+    if (!data.user) {
+      router.push(`/auth/login?next=${encodeURIComponent(checkoutPath)}`);
+      return;
+    }
+    router.push(checkoutPath);
+  };
 
   return (
     <div className="sticky top-24 rounded-2xl bg-[#f7f3e9]/80 backdrop-blur-xl border border-slate-200/40 p-6 shadow-2xl flex flex-col gap-6">
@@ -144,8 +161,10 @@ export function BookingWidget({ trip, initialAccommodationId }: BookingWidgetPro
       </div>
 
       {/* CTA */}
-      <Link 
-        href={!selectedAccId || isSoldOut ? '#' : `/checkout/${trip.id}?acc=${selectedAccId}&trp=${selectedTrpId === 'transport' ? firstTransport?.id || 'trp-with' : 'trp-without'}`}
+      <button
+        type="button"
+        onClick={() => void handleGuaranteeSpot()}
+        disabled={!checkoutPath}
         className={`w-full py-4 px-6 rounded-xl font-bold text-center transition-all duration-300 flex items-center justify-center gap-2 ${
           !selectedAccId || isSoldOut 
             ? 'bg-adventure-card/40 text-slate-400 cursor-not-allowed' 
@@ -153,7 +172,7 @@ export function BookingWidget({ trip, initialAccommodationId }: BookingWidgetPro
         }`}
       >
         Garantir minha vaga
-      </Link>
+      </button>
 
       {/* Trust Badges */}
       <div className="grid grid-cols-3 gap-2 pt-4 border-t border-white/5">

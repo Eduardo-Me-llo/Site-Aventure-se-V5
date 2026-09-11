@@ -74,7 +74,7 @@ export default function Navbar() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
           <Link href="/#trips-section" className="text-slate-900 hover:text-blue-500 transition-colors text-sm font-medium tracking-wide">
-            Próximos Destinos
+            Próximo Destino
           </Link>
           <Link href="/sobre" className={`transition-colors text-sm font-medium tracking-wide ${pathname === '/sobre' ? 'text-blue-600' : 'text-slate-900 hover:text-blue-500'}`}>
             Sobre nós

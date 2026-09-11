@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +37,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace('/profile');
+      const next = searchParams.get('next');
+      const safeNext = next?.startsWith('/') ? next : '/profile';
+      router.replace(safeNext);
       router.refresh();
     } finally {
       setIsSubmitting(false);
@@ -113,4 +117,8 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+export default function LoginPage() {
+  return <Suspense fallback={<div className="min-h-screen bg-adventure-dark" />}><LoginForm /></Suspense>;
 }

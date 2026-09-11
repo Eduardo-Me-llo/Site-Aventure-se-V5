@@ -152,7 +152,8 @@ export default function AdminCouponsPage() {
         {/* Coupons Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCoupons.map(coupon => {
-            const isExpired = coupon.expires_at ? new Date(coupon.expires_at) < new Date() : false;
+            const expirationDate = coupon.expires_at ? new Date(coupon.expires_at) : null;
+            const isExpired = Boolean(expirationDate && !Number.isNaN(expirationDate.getTime()) && expirationDate < new Date());
             const isDepleted = coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses;
             const canUse = coupon.is_active && !isExpired && !isDepleted;
 

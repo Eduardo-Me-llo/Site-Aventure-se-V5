@@ -16,7 +16,10 @@ export function formatCurrency(value: number): string {
  * Formata data no padrão brasileiro dd/mm/aaaa
  */
 export function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T12:00:00');
+  if (!dateStr) return '--';
+  const normalizedDate = /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? `${dateStr}T12:00:00` : dateStr;
+  const date = new Date(normalizedDate);
+  if (Number.isNaN(date.getTime())) return '--';
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',

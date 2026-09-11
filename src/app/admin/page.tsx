@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { DollarSign, Users, Clock, BarChart3, TrendingUp, Package, Ticket, ArrowRight, LogOut, Settings, Home, Image, Save, Ban, UserCheck, FileText } from 'lucide-react';
+import { DollarSign, Users, Clock, BarChart3, TrendingUp, Package, Ticket, ArrowRight, LogOut, Settings, Home, Image, Save, Ban, UserCheck, FileText, UserPlus } from 'lucide-react';
 import { getAdminBookings, getAdminTrips, getAdminUsers, saveAdminTrip, updateAdminUserStatus, getCommitmentTerms, saveCommitmentTerms, getAboutContent, saveAboutContent, defaultAboutContent, type AboutContent, type AdminUser } from '@/lib/supabase/admin-data';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency, getPaymentStatusColor, getPaymentStatusLabel } from '@/lib/utils';
@@ -26,6 +26,8 @@ export default function AdminDashboardPage() {
   const [termsFeedback, setTermsFeedback] = useState('');
   const [aboutContent, setAboutContent] = useState<AboutContent>(defaultAboutContent);
   const [aboutFeedback, setAboutFeedback] = useState('');
+  const [newAdmin, setNewAdmin] = useState({ email: '', password: '', fullName: '' });
+  const [adminFeedback, setAdminFeedback] = useState('');
   const [dashboardFeedback, setDashboardFeedback] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -87,6 +89,18 @@ export default function AdminDashboardPage() {
     } catch {
       setAboutFeedback('Não foi possível salvar o conteúdo.');
     }
+  };
+
+  const handleCreateAdmin = async () => {
+    setAdminFeedback('');
+    const response = await fetch('/api/admin/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newAdmin) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setAdminFeedback(result.error || 'Não foi possível criar o administrador.');
+      return;
+    }
+    setNewAdmin({ email: '', password: '', fullName: '' });
+    setAdminFeedback('Administrador criado com sucesso.');
   };
 
   if (loading) {
@@ -368,6 +382,18 @@ export default function AdminDashboardPage() {
             </div>
             <button type="button" onClick={() => void handleSaveAboutContent()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"><Save className="h-4 w-4" /> Salvar Sobre nós</button>
             {aboutFeedback && <p role="status" className="mt-3 text-sm text-blue-600">{aboutFeedback}</p>}
+          </section>
+
+          <section className="bg-adventure-card/50 border border-neutral-300 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2"><UserPlus className="h-5 w-5 text-blue-500" /> Adicionar administrador</h2>
+            <p className="mt-1 text-sm text-slate-700">Crie uma conta administrativa sem expor permissões no navegador.</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <input value={newAdmin.fullName} onChange={(event) => setNewAdmin((current) => ({ ...current, fullName: event.target.value }))} placeholder="Nome completo" className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-slate-900" />
+              <input type="email" value={newAdmin.email} onChange={(event) => setNewAdmin((current) => ({ ...current, email: event.target.value }))} placeholder="E-mail" className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-slate-900" />
+              <input type="password" minLength={8} value={newAdmin.password} onChange={(event) => setNewAdmin((current) => ({ ...current, password: event.target.value }))} placeholder="Senha (8+ caracteres)" className="rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-slate-900" />
+            </div>
+            <button type="button" onClick={() => void handleCreateAdmin()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"><UserPlus className="h-4 w-4" /> Criar administrador</button>
+            {adminFeedback && <p role="status" className="mt-3 text-sm text-blue-600">{adminFeedback}</p>}
           </section>
 
           <section className="bg-adventure-card/50 border border-neutral-300 rounded-2xl p-6">

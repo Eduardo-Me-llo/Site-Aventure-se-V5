@@ -12,6 +12,7 @@ import { BookingFormData, Coupon } from '@/types';
 import Link from 'next/link';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { getPackagePrice, PIX_DISCOUNT } from '@/lib/pricing';
+import { createBookingTransaction } from '@/lib/supabase/bookings';
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -176,17 +177,16 @@ export default function CheckoutPage() {
         , payment_option: formData.payment_option
       };
       
-      const booking = await createBooking(
-        trip,
-        selectedAcc,
-        selectedTrp,
-        appliedCoupon,
-        finalFormData
-      );
-      
-      await confirmBooking(booking.id);
-      
-      router.push(`/checkout/success/${booking.id}`);
+      const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+      const booking = isSupabaseConfigured && isUuid(trip.id) && isUuid(selectedAcc.id) && isUuid(selectedTrp.id)
+        ? await createBookingTransaction(trip, selectedAcc, selectedTrp, appliedCoupon, finalFormData)
+        : await createBooking(trip, selectedAcc, selectedTrp, appliedCoupon, finalFormData);
+      if (isSupabaseConfigured && isUuid(booking.id)) {
+        router.push(`/checkout/success/${booking.id}`);
+      } else {
+        await confirmBooking(booking.id);
+        router.push(`/checkout/success/${booking.id}`);
+      }
     } catch (err) {
       console.error(err);
       setIsProcessing(false);
