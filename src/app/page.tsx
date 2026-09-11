@@ -61,13 +61,13 @@ export default function HomePage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-            <button 
-              onClick={scrollToTrips}
+            <Link 
+              href="/trips/reveillon-ubatuba-2026"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 text-white font-bold text-lg transition-all duration-300 shadow-[0_0_30px_-5px_rgba(15,131,247,0.25)] hover:shadow-[0_0_40px_-5px_rgba(15,131,247,0.4)] hover:-translate-y-1"
             >
               Próximo Destino
               <ArrowRight className="w-5 h-5" />
-            </button>
+            </Link>
             <Link 
               href="#how-it-works"
               className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-adventure-card/50 hover:bg-adventure-card border border-neutral-300 text-slate-900 font-medium text-lg transition-all duration-300 backdrop-blur-sm"
@@ -373,13 +373,13 @@ export default function HomePage() {
           <p className="text-xl md:text-2xl text-white mb-10">
             A próxima experiência inesquecível está te esperando. Escolha seu destino e embarque com a gente.
           </p>
-          <button 
-            onClick={scrollToTrips}
+          <Link 
+            href="/trips/reveillon-ubatuba-2026"
             className="inline-flex items-center justify-center gap-2 px-10 py-5 rounded-full bg-white text-neutral-950 font-bold text-xl hover:bg-neutral-200 transition-all duration-300 shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_-5px_rgba(255,255,255,0.5)] hover:-translate-y-1"
           >
             Explorar Destinos
             <ArrowRight className="w-6 h-6" />
-          </button>
+          </Link>
         </div>
       </section>
     </main>
