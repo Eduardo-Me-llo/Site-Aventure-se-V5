@@ -84,6 +84,9 @@ export default function TripDetailsPage() {
   const days = calculateDays(trip.start_date, trip.end_date);
   const nights = calculateNights(trip.start_date, trip.end_date);
   const difficultyColor = getDifficultyColor(trip.difficulty);
+  const startingPrice = trip.accommodations?.reduce((lowest: number | null, accommodation: { price: number }) => (
+    lowest === null ? accommodation.price : Math.min(lowest, accommodation.price)
+  ), null) ?? 0;
   const selectedAccommodationId = searchParams.get('acc');
   const selectedAccommodation = trip.accommodations?.find((acc: any) => acc.id === selectedAccommodationId);
   const selectedAccommodationImages = selectedAccommodation
@@ -375,7 +378,7 @@ export default function TripDetailsPage() {
         <div>
           <p className="text-xs text-slate-700 mb-0.5">A partir de</p>
           <p className="text-xl font-bold text-slate-900 tracking-tight">
-            {formatCurrency(trip.price)}
+            {formatCurrency(startingPrice)}
           </p>
         </div>
         <Link 

@@ -79,7 +79,7 @@ export default function HomePage() {
 
         {/* Stats Bar */}
         <div className="relative z-10 w-full max-w-5xl mx-auto mt-16 sm:mt-24 mb-10 sm:mb-16 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 py-5 sm:py-8 px-3 sm:px-6 rounded-3xl bg-adventure-card/40 border border-neutral-300/50 backdrop-blur-md">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 py-5 sm:py-8 px-3 sm:px-6 rounded-3xl bg-adventure-card/40 border border-neutral-300/50 backdrop-blur-md">
             <div className="flex items-center justify-center gap-4">
               <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center">
                 <Users className="w-6 h-6 text-blue-400" />
@@ -89,13 +89,23 @@ export default function HomePage() {
                 <p className="text-xs sm:text-sm text-slate-700">Aventureiros</p>
               </div>
             </div>
-            <div className="flex items-center justify-center gap-4 border-l border-neutral-800/50 md:border-t-0 md:border-l border-neutral-300/50 pl-3 sm:pl-0">
+            <div className="flex items-center justify-center gap-4 border-t border-neutral-400/60 pt-4 md:border-t-0 md:border-l md:border-neutral-300/50 md:pt-0 md:pl-3">
               <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center">
                 <MapPin className="w-6 h-6 text-blue-400" />
               </div>
+
               <div className="text-left">
                 <p className="text-xl sm:text-2xl font-bold text-slate-900">15+</p>
                 <p className="text-xs sm:text-sm text-slate-700">Destinos</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-4 border-t border-neutral-400/60 pt-4 md:border-t-0 md:border-l-2 md:border-neutral-400/60 md:pt-0 md:pl-3">
+              <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-xl sm:text-2xl font-bold text-slate-900">+ de 6 anos</p>
+                <p className="text-xs sm:text-sm text-slate-700">De experiência</p>
               </div>
             </div>
           </div>
@@ -254,7 +264,7 @@ export default function HomePage() {
       </section>
 
       {/* 5. Differentials Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-neutral-900">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-neutral-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Por que Aventure-se?</h2>
@@ -311,7 +321,7 @@ export default function HomePage() {
       </section>
 
       {/* 6. Testimonials Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-adventure-card relative overflow-hidden">
+      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-adventure-card relative overflow-hidden">
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[100px]"></div>
         
         <div className="max-w-7xl mx-auto relative z-10">
