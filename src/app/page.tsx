@@ -70,7 +70,7 @@ export default function HomePage() {
             </Link>
             <Link 
               href="#how-it-works"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-adventure-card/50 hover:bg-adventure-card border border-neutral-300 text-slate-900 font-medium text-lg transition-all duration-300 backdrop-blur-sm"
+              className="inline-flex items-center justify-center pt-2 px-8 py-4 rounded-full bg-adventure-card/50 hover:bg-adventure-card border border-neutral-300 text-slate-900 font-medium text-lg transition-all duration-300 backdrop-blur-sm"
             >
               Como Funciona
             </Link>
@@ -93,7 +93,7 @@ export default function HomePage() {
               <div className="hidden sm:flex w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center">
                 <MapPin className="w-6 h-6 text-blue-400" />
               </div>
-
+              
               <div className="text-left">
                 <p className="text-xl sm:text-2xl font-bold text-slate-900">15+</p>
                 <p className="text-xs sm:text-sm text-slate-700">Destinos</p>
@@ -264,7 +264,7 @@ export default function HomePage() {
       </section>
 
       {/* 5. Differentials Section */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-neutral-900">
+      <section className="pt-4 py-20 sm:py-20 px-4 pb-10 sm:px-6 lg:px-8 bg-neutral-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Por que Aventure-se?</h2>
@@ -321,7 +321,7 @@ export default function HomePage() {
       </section>
 
       {/* 6. Testimonials Section */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-adventure-card relative overflow-hidden">
+      <section className="py-16 pt-6 sm:py-20 px-4 sm:px-6 lg:px-8 bg-adventure-card relative overflow-hidden">
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[100px]"></div>
         
         <div className="max-w-7xl mx-auto relative z-10">
