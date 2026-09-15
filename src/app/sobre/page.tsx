@@ -9,14 +9,14 @@ import { defaultAboutContent, type AboutContent } from '@/lib/supabase/admin-dat
 const team = [
   {
     name: 'Victor Max Mello',
-    role: 'Fundadora e Diretor de Experiências',
-    image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=85',
+    role: 'Fundador e Diretor de Experiências',
+    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=85',
     bio: 'Transforma roteiros em experiências acolhedoras, autênticas e cheias de significado.'
   },
   {
     name: 'Carine',
-    role: 'Coordenador de Operações',
-    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=85',
+    role: 'Coordenadora de Operações',
+    image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=85',
     bio: 'Cuida de cada detalhe para que a jornada seja fluida, segura e inesquecível.'
   },
   {
@@ -78,7 +78,7 @@ export default function AboutPage() {
           <div className="relative min-h-[300px] sm:min-h-[420px] rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden border border-slate-300 shadow-xl">
             <img src="https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1200&q=85" alt="Grupo de viajantes em uma paisagem natural" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-            <p className="absolute bottom-6 left-6 right-6 text-white text-lg font-medium">Pequenos grupos, grandes descobertas.</p>
+            <p className="absolute bottom-6 left-6 right-6 text-[#f3ead8] text-lg font-medium">Pequenos grupos, grandes descobertas.</p>
           </div>
         </div>
       </section>

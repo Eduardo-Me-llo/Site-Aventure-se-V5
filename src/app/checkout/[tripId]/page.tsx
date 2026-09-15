@@ -6,7 +6,7 @@ import {
   CreditCard, QrCode, Tag, Copy, Check, ChevronRight, ChevronLeft, 
   Shield, Lock, Loader2, User, Phone, FileText, AlertCircle, Clock 
 } from 'lucide-react';
-import { getTripById, validateCoupon, calculateDiscount, createBooking, confirmBooking } from '@/lib/store';
+import { getTripById, validateCoupon, calculateDiscount, createBooking } from '@/lib/store';
 import { formatCurrency, formatDateRange } from '@/lib/utils';
 import { BookingFormData, Coupon } from '@/types';
 import Link from 'next/link';
@@ -123,6 +123,11 @@ export default function CheckoutPage() {
     setCardData((prev: any) => ({ ...prev, [name]: value }));
   };
 
+  const handlePaymentMethodChange = (method: 'pix' | 'credit_card') => {
+    setPaymentMethod(method);
+    setFormData((prev: any) => ({ ...prev, payment_option: method === 'pix' ? 'pix_cash' : 'installments_1' }));
+  };
+
   const applyCoupon = async () => {
     if (!couponCode) return;
     
@@ -143,6 +148,11 @@ export default function CheckoutPage() {
   };
 
   const processPayment = async () => {
+    if (paymentMethod === 'pix' && pixTimer === 0) {
+      alert('Este código PIX expirou. Volte ao início do pagamento para gerar uma nova cobrança.');
+      return;
+    }
+
     setIsProcessing(true);
     setCurrentStep(3);
     
@@ -184,7 +194,6 @@ export default function CheckoutPage() {
       if (isSupabaseConfigured && isUuid(booking.id)) {
         router.push(`/checkout/success/${booking.id}`);
       } else {
-        await confirmBooking(booking.id);
         router.push(`/checkout/success/${booking.id}`);
       }
     } catch (err) {
@@ -421,7 +430,7 @@ export default function CheckoutPage() {
                 {/* Payment Methods */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
                   <button
-                    onClick={() => setPaymentMethod('pix')}
+                    onClick={() => handlePaymentMethodChange('pix')}
                     className={`flex-1 py-4 flex flex-col items-center justify-center rounded-xl border-2 transition-all ${
                       paymentMethod === 'pix' 
                         ? 'border-blue-500 bg-blue-50 text-slate-900 shadow-sm'
@@ -434,7 +443,7 @@ export default function CheckoutPage() {
                   </button>
                   
                   <button
-                    onClick={() => setPaymentMethod('credit_card')}
+                    onClick={() => handlePaymentMethodChange('credit_card')}
                     className={`flex-1 py-4 flex flex-col items-center justify-center rounded-xl border-2 transition-all ${
                       paymentMethod === 'credit_card' 
                         ? 'border-blue-500 bg-blue-50 text-slate-900 shadow-sm'
@@ -449,11 +458,18 @@ export default function CheckoutPage() {
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Forma de pagamento*</label>
                   <select required value={formData.payment_option} onChange={handleInputChange} name="payment_option" className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-slate-900">
-                    <option value="pix_cash">PIX à vista com desconto</option>
-                    <option value="pix_5x">PIX parcelado em 5x</option>
-                    <option value="entry_installments">Entrada + parcelado</option>
-                    {Array.from({ length: 11 }, (_, index) => index + 2).map((installment) => <option key={installment} value={`installments_${installment}`}>Parcelado em {installment}x</option>)}
-                    <option value="other">Outro</option>
+                    {paymentMethod === 'pix' ? (
+                      <>
+                        <option value="pix_cash">PIX à vista com desconto</option>
+                        <option value="pix_5x">PIX parcelado em 5x</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="entry_installments">Entrada + parcelado</option>
+                        {Array.from({ length: 11 }, (_, index) => index + 2).map((installment) => <option key={installment} value={`installments_${installment}`}>Parcelado em {installment}x</option>)}
+                        <option value="installments_1">À vista no cartão</option>
+                      </>
+                    )}
                   </select>
                 </div>
                 

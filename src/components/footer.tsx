@@ -18,10 +18,10 @@ export function Footer() {
               Transformando a maneira como você explora o mundo. Viagens de aventura premium para destinos inesquecíveis.
             </p>
             <div className="flex items-center gap-4 mt-2">
-              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
+              <a href="https://www.instagram.com/sejaaventureiro" target="_blank" rel="noreferrer" aria-label="Instagram" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
                 <Camera className="h-5 w-5" />
               </a>
-              <a href="https://www.youtube.com/" target="_blank" rel="noreferrer" aria-label="YouTube" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
+              <a href="https://www.youtube.com/@SejaAventureiroAventure-se" target="_blank" rel="noreferrer" aria-label="YouTube" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
                 <Video className="h-5 w-5" />
               </a>
               <a href="https://wa.me/5521977167373" target="_blank" rel="noreferrer" aria-label="WhatsApp" className="h-10 w-10 rounded-full bg-adventure-card/60 flex items-center justify-center hover:bg-blue-500/20 hover:text-blue-400 transition-colors">
@@ -46,12 +46,12 @@ export function Footer() {
             <h3 className="text-slate-900 font-semibold text-lg">Empresa</h3>
             <ul className="flex flex-col gap-3 text-sm">
               <li><Link href="/sobre" className="hover:text-blue-400 transition-colors">Sobre Nós</Link></li>
-              <li><Link href="/faq" className="hover:text-blue-400 transition-colors">FAQ</Link></li>
+              {/* <li><Link href="/faq" className="hover:text-blue-400 transition-colors">FAQ</Link></li> */}
               <li><Link href="/contato" className="hover:text-blue-400 transition-colors">Contato</Link></li>
             </ul>
           </div>
 
-          {/* Newsletter / Contato */}
+          {/* Newsletter / Contato
           <div className="flex flex-col gap-4">
             
             <p className="text-slate-400 text-sm">
@@ -69,12 +69,12 @@ export function Footer() {
               >
                 Inscrever-se
               </button>
-            </form>
+            </form>*/}
             <div className="flex flex-col gap-2 mt-4 text-sm">
-              <a href="mailto:contato@aventure-se.com.br" className="flex items-center gap-2 hover:text-blue-400 transition-colors">
-                <Mail className="h-4 w-4" /> contato@aventure-se.com.br
+              <a href="mailto:sejaaventureiro@gmail.com" className="flex items-center gap-2 hover:text-blue-400 transition-colors">
+                <Mail className="h-4 w-4" /> sejaaventureiro@gmail.com
               </a>
-              <a href="tel:+5521977167373" className="flex items-center gap-2 hover:text-blue-400 transition-colors">
+              <a href="https://wa.me/5521977167373" className="flex items-center gap-2 hover:text-blue-400 transition-colors">
                 <Phone className="h-4 w-4" /> (21) 97716-7373
               </a>
             </div>
@@ -93,7 +93,7 @@ export function Footer() {
             <Link href="/privacidade" className="hover:text-white transition-colors">Privacidade</Link>
           </div>
         </div>
-      </div>
+      {/*</div>*/}
     </footer>
   );
 }
