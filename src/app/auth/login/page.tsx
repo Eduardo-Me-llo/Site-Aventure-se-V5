@@ -21,7 +21,7 @@ function LoginForm() {
     if (e) e.preventDefault();
     setFeedback('');
     if (!isSupabaseConfigured) {
-      setFeedback('A autenticação ainda não foi configurada. Adicione as credenciais do Supabase em .env.local.');
+      setFeedback('A autenticação não está configurada neste ambiente. Cadastre NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY na Vercel e faça um novo deploy.');
       return;
     }
 

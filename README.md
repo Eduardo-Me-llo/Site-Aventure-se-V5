@@ -19,6 +19,15 @@ WHERE user_id = '<UUID_DO_USUARIO_DO_AUTH>';
 
 Nunca use uma `service_role` no navegador ou em variáveis `NEXT_PUBLIC_*`.
 
+### Configuração na Vercel
+
+As variáveis de `.env.local` não são enviadas para a Vercel. No projeto da Vercel, abra **Settings > Environment Variables** e cadastre nos ambientes usados pelo deploy:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+Depois de salvar, faça um novo deploy. Para verificar a conexão real com o banco, acesse `/api/health/supabase`; uma resposta `{"ok":true,"service":"supabase"}` confirma que a aplicação conseguiu consultar a tabela `profiles`.
+
 ---
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
